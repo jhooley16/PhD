@@ -8,7 +8,7 @@ from mpl_toolkits.basemap import Basemap
 import functions as funct
 import test
 
-os.chdir('/Users/jmh2g09/Desktop/201209_MERGE')
+os.chdir('/Users/jmh2g09/Documents/PhD/Data/201203_elev')
 directory = os.getcwd()
 
 month = directory[-8:-6]

@@ -1,9 +1,11 @@
 import os
 import numpy as np
+from mpl_toolkits.basemap import Basemap
+import decimal
 
 def month_data(directory):
-    """Extract latitude, longitude, and sea surface height data from all\
-    files in 'directory'.
+    """Extract latitude, longitude, sea surface height, and surface ice concentration
+    data from all files in 'directory'.
     eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'"""
     files = os.listdir(directory)
     lat = []
@@ -30,6 +32,10 @@ def month_data(directory):
 
 
 def day_data(day, directory):
+    """Extract latitude, longitude, sea surface height, and surface ice concentration
+    data for a certain day in 'directory'.
+    eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'
+    day corresponds to the day in a particular month."""
     files = os.listdir(directory)
     if 10 <= day <= 31:
         dayfiles = [file for file in files if file[13:15] == str(day)]
@@ -59,8 +65,7 @@ def day_data(day, directory):
 
 
 def stereo(lat, lon):
-    """Convert Lat and Lon (Polar) coordinates to stereographic (x, y)\
-            coordinates (km).
+    """Convert Lat and Lon (Polar) coordinates to stereographic (x, y) coordinates (km).
         Latitude in degrees.
         Longitude in degrees.
         sgn = 1 for Northern Hempsphere.
