@@ -3,46 +3,47 @@ import functions as funct
 from netCDF4 import Dataset
 import numpy as np
 
-mnth = input('What month? (xx): ')
 yr = input('What year? (xxxx): ')
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/' + yr + mnth + '_elev')
-directory = os.getcwd()
+for mnth in range(1,13):
 
-month = directory[-7:-5]
-year = directory[-11:-7]
-print(month, year)
+    if 0 < mnth < 10:
+        os.chdir('/Users/jmh2g09/Documents/PhD/Data/' + yr + '0' + str(mnth) + '_elev')
+    else:
+        os.chdir('/Users/jmh2g09/Documents/PhD/Data/' + yr + str(mnth) + '_elev')
+    directory = os.getcwd()
 
-data = funct.month_data(directory)
+    month = directory[-7:-5]
+    year = directory[-11:-7]
+    print(month, year)
 
-lat = data['lat']
-lon = data['lon']
-ssh = data['ssh']
-ice_conc = data['ice_conc']
+    data = funct.month_data(directory)
 
-# Grid sea surface height to a 1-degree grid
+    lat = data['lat']
+    lon = data['lon']
+    ssh = data['ssh']
+    ice_conc = data['ice_conc']
 
-data = funct.grid(ssh, lon, lat, 1)
-grid_ssh = data['Grid']
-grid_lon = data['Lon']
-grid_lat = data['Lat']
+    # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Raw
 
-# Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded
+    os.chdir('/Users/jmh2g09/Documents/PhD/Data/Raw')
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded')
+    nc = Dataset(year + month + '_raw.nc', 'w', format='NETCDF4')
+    nc.description = 'Raw data for ' + month + ', ' + year
 
-netfile = Dataset(year + month + '.nc', 'w', format='NETCDF4')
-netfile.description = 'Data for ' + month + ', ' + year
+    nc.createDimension('lat', np.size(lat))
+    nc.createDimension('lon', np.size(lon))
+    nc.createDimension('ssh', np.size(ssh))
+    nc.createDimension('ice_conc', np.size(ice_conc))
 
-netfile.createDimension('lat', np.size(grid_lat))
-netfile.createDimension('lon', np.size(grid_lon))
+    latitudes = nc.createVariable('Latitude', 'f4', ('lat',))
+    longitudes = nc.createVariable('Longitude', 'f4', ('lon',))
+    ssh = nc.createVariable('Sea Surface Height', 'f4', ('ssh',))
+    ice_conc = nc.createVariable('Sea Ice Concentration', 'f4', ('ice_conc',))
 
-latitudes = netfile.createVariable('latitude', 'f4', ('lat',))
-longitudes = netfile.createVariable('longitude', 'f4', ('lon',))
-gridded_data = netfile.createVariable('ssh', 'f4', ('lon','lat'))
+    latitudes[:] = lat
+    longitudes[:] = lon
+    ssh[:] = ssh
+    ice_conc[:] = ice_conc
 
-latitudes[:] = grid_lat
-longitudes[:] = grid_lon
-gridded_data[:] = grid_ssh
-
-netfile.close()
+    nc.close()

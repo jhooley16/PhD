@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 import functions as funct
-import test
 
 os.chdir('/Users/jmh2g09/Documents/PhD/Data/201203_elev')
 directory = os.getcwd()
@@ -115,6 +114,9 @@ m.colorbar()
 #pl.clim(-50, 50)
 pl.show()
 
+# We need to meshgrid the lon, lat data as they are only 1D, while the ssh data is 2D
+grid_lats, grid_lons = np.meshgrid(grid_lat, grid_lon)
+
 pl.figure(str(month) + '_' + str(year) + '_gridded_1degree_stereo')
 pl.clf()
 m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
@@ -123,9 +125,8 @@ m.drawcoastlines(zorder=10)
 m.fillcontinents(zorder=10)
 m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
 m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-X_range, Y_range = np.meshgrid(x_range, y_range)
-x_map, y_map = m(X_range, Y_range)
-m.pcolor(grid_lon, grid_lat, np.transpose(grid_data))
+stereo_x, stereo_y = m(grid_lons, grid_lats)
+m.pcolor(stereo_x, stereo_y, grid_data)
 m.colorbar()
-pl.clim(-50, 50)
+#pl.clim(-50, 50)
 pl.show()
