@@ -7,11 +7,11 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 import functions as funct
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/201203_elev')
+os.chdir('/Users/jmh2g09/Documents/PhD/Data/201201_elev')
 directory = os.getcwd()
 
-month = directory[-8:-6]
-year = directory[-12:-8]
+month = directory[-7:-4]
+year = directory[-11:-8]
 
 data = funct.month_data(directory)
 
@@ -32,66 +32,68 @@ pl.ylabel('Frequency')
 pl.title(str(month) + ' ' + str(year))
 pl.show()
 
+
+#I = input('Use ctrl-c to kill the code')
 # Plot all the data as a scatter on a polar steographic map
 
-pl.figure(str(month) + '_' + str(year) + '_alongtrack_stereo')
-pl.clf()
-m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
-m.drawmapboundary()
-m.drawcoastlines(zorder=10)
-m.fillcontinents(zorder=10)
-m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-x_map, y_map = m(lon, lat)
-m.scatter(x_map, y_map, c=ssh, edgecolor='none')
-m.colorbar()
-pl.clim(-50, 50)
-pl.title(str(month) + ' ' + str(year))
-pl.show()
+#pl.figure(str(month) + '_' + str(year) + '_alongtrack_stereo')
+#pl.clf()
+#m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+#m.drawmapboundary()
+#m.drawcoastlines(zorder=10)
+#m.fillcontinents(zorder=10)
+#m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#x_map, y_map = m(lon, lat)
+#m.scatter(x_map, y_map, c=ssh, edgecolor='none')
+#m.colorbar()
+#pl.clim(-50, 50)
+#pl.title(str(month) + ' ' + str(year))
+#pl.show()
 
 # Plot only the ssh points above a certain threshold
 
-bad_ssh = []
-bad_lat = []
-bad_lon = []
-bad_height = 50
-for i in range(np.size(ssh)):
-    if np.absolute(ssh[i]) >= bad_height:
-        bad_ssh.append(ssh[i])
-        bad_lat.append(lat[i])
-        bad_lon.append(lon[i])
+#bad_ssh = []
+#bad_lat = []
+#bad_lon = []
+#bad_height = 50
+#for i in range(np.size(ssh)):
+#    if np.absolute(ssh[i]) >= bad_height:
+#        bad_ssh.append(ssh[i])
+#        bad_lat.append(lat[i])
+#        bad_lon.append(lon[i])#
 
-pl.figure(str(month) + '_' + str(year) + '_alongtrack_stereo_baddata')
-pl.clf()
-m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
-m.drawmapboundary()
-m.drawcoastlines()
-m.fillcontinents(zorder=0)
-m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-x1, y1 = m(bad_lon, bad_lat)
-m.scatter(x1, y1, c=bad_ssh, edgecolor='none')
-m.colorbar()
-pl.title('CryoSat-2 points where |ssh| > ' + str(bad_height) + ' m')
+#pl.figure(str(month) + '_' + str(year) + '_alongtrack_stereo_baddata')
+#pl.clf()
+#m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+#m.drawmapboundary()
+#m.drawcoastlines()
+#m.fillcontinents(zorder=0)
+#m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#x1, y1 = m(bad_lon, bad_lat)
+#m.scatter(x1, y1, c=bad_ssh, edgecolor='none')
+#m.colorbar()
+#pl.title('CryoSat-2 points where |ssh| > ' + str(bad_height) + ' m')
 #pl.clim(-50, 50)
-pl.show()
+#pl.show()
 
 # Plot all the data on a Equidistant Cylindrical map
 
-pl.figure(str(month) + '_' + str(year) + '_alongtrack_cyl')
-pl.clf()
-m = Basemap(projection='cyl', llcrnrlat=-90, urcrnrlat=-30,
-            llcrnrlon=-180, urcrnrlon=180, resolution='c')
-m.drawmapboundary()
-m.drawcoastlines(zorder=10)
-m.fillcontinents(zorder=10)
-m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-x_map_cyl, y_map_cyl = m(lon, lat)
-m.scatter(x_map_cyl, y_map_cyl, c=ssh, edgecolor='none')
-m.colorbar()
-pl.clim(-50, 50)
-pl.show()
+#pl.figure(str(month) + '_' + str(year) + '_alongtrack_cyl')
+#pl.clf()
+#m = Basemap(projection='cyl', llcrnrlat=-90, urcrnrlat=-30,
+#            llcrnrlon=-180, urcrnrlon=180, resolution='c')
+#m.drawmapboundary()
+#m.drawcoastlines(zorder=10)
+#m.fillcontinents(zorder=10)
+#m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#x_map_cyl, y_map_cyl = m(lon, lat)
+#m.scatter(x_map_cyl, y_map_cyl, c=ssh, edgecolor='none')
+#m.colorbar()
+#pl.clim(-50, 50)
+#pl.show()
 
 # Grid the data to a 1-degree grid
 
