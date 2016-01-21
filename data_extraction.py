@@ -8,9 +8,9 @@ yr = input('What year? (xxxx): ')
 for mnth in range(1,13):
 
     if 0 < mnth < 10:
-        os.chdir('/Users/jmh2g09/Documents/PhD/Data/' + yr + '0' + str(mnth) + '_elev')
+        os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files' + yr + '0' + str(mnth) + '_elev')
     else:
-        os.chdir('/Users/jmh2g09/Documents/PhD/Data/' + yr + str(mnth) + '_elev')
+        os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files' + yr + str(mnth) + '_elev')
     directory = os.getcwd()
 
     month = directory[-7:-5]
