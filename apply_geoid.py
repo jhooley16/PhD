@@ -54,6 +54,8 @@ for file in os.listdir():
 
         ssh_data = nc.variables['Sea Surface Height'][:]
         #print('The shape of the ssh data is ' + str(np.shape(ssh_data)))
+        
+        ice_data = nc.variables['Sea Ice Concentration'][:]
 
         nc.close()
 
@@ -75,9 +77,11 @@ for file in os.listdir():
         nc.createDimension('lon', np.size(lon_data))
         latitudes = nc.createVariable('Latitude', float, ('lat',))
         longitudes = nc.createVariable('Longitude', float, ('lon',))
+        sea_ice = nc.createVariable('Sea Ice Concentration', float, ('lon','lat'))
         geoid_ssh = nc.createVariable('Sea Surface Height', float, ('lon','lat'))
         latitudes[:] = lat_data
         longitudes[:] = lon_data
+        sea_ice[:] = ice_data
         geoid_ssh[:] = ssh_above_geoid
         nc.close()
 
@@ -96,6 +100,7 @@ for file in os.listdir():
         m.pcolor(stereo_x, stereo_y, ssh_data)
         m.colorbar()
         pl.clim(-50, 50)
+        m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
         pl.savefig('../Figures/'+ str(year) + '_' + str(month) + '_ssh_nogeoid_1degree_stereo.png', 
             format='png', transparent=True)
         pl.close()
@@ -113,6 +118,7 @@ for file in os.listdir():
         A = np.std(ssh_above_geoid)
         B = np.mean(ssh_above_geoid)
         pl.clim(B-2*A, B+2*A)
+        m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
         pl.savefig('../Figures/' + str(year) + '_' + str(month) + '_ssh_above_' + geo + '_1degree_stereo.png', 
             format='png', transparent=True)
         pl.close()

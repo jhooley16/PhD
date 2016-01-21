@@ -24,6 +24,7 @@ for file in os.listdir():
         nc = Dataset(file, 'r')
         
         ssh = nc.variables['Sea Surface Height'][:]
+        ice_data = nc.variables['Sea Ice Concentration'][:]
         
         nc.close()
         
@@ -38,7 +39,6 @@ for file in os.listdir():
         latitudes = nc.createVariable('Latitude', float, ('lat',))
         longitudes = nc.createVariable('Longitude', float, ('lon',))
         ssh_anom = nc.createVariable('Sea Surface Height Anomaly', float, ('lon','lat'))
-        
         latitudes[:] = lat
         longitudes[:] = lon
         ssh_anom[:] = ssh_anomaly
@@ -61,5 +61,6 @@ for file in os.listdir():
         A = np.std(ssh_anomaly)
         B = np.mean(ssh_anomaly)
         pl.clim(B-2*A, B+2*A)
+        m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
         pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/Geoid/Anomalies/Figures/' + str(year) + '_' + str(month) + '_ssh_anomaly_above_GOCO05s_1degree_stereo.png', format='png', transparent=True)
         pl.close()
