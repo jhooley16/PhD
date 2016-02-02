@@ -21,7 +21,7 @@ for file in os.listdir():
 
 ssh = ssh / 12
 
-nc = Dataset('2012_geoid_mean.nc', 'w', FORMAT='NETCDF4_CLASSIC')
+nc = Dataset('2012_geoid_mean.nc', 'w', format='NETCDF4_CLASSIC')
 nc.description = yr + 'annual mean'
 
 nc.createDimension('lat', np.size(lat))

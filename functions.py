@@ -133,8 +133,8 @@ def grid(data, lon_data, lat_data, res):
     
     x_range = np.arange(np.round(np.min(x_cyl)), np.round(np.max(x_cyl)) + res, res)
     y_range = np.arange(np.round(np.min(y_cyl)), np.round(np.max(y_cyl)) + res, res)
-    xy_grid = np.full([np.size(x_range), np.size(y_range)], np.NaN)
-    xy_count = np.full([np.size(x_range), np.size(y_range)], np.NaN)
+    xy_grid = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
+    xy_count = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
 
     for i in range(np.size(data)):
         x_coord = float(decimal.Decimal(float(x_cyl[i])).quantize(decimal.Decimal(str(res))))
@@ -156,5 +156,4 @@ def grid(data, lon_data, lat_data, res):
     xy_grid = np.ma.masked_where(np.isnan(xy_grid), xy_grid)
     xy_count = np.ma.masked_where(np.isnan(xy_count), xy_count)
     
-
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
