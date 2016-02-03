@@ -4,35 +4,34 @@ from netCDF4 import Dataset
 
 yr = input('What year? (xxxx): ')
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/Geoid')
+os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/MDT')
 
-ssh = np.zeros((361, 30))
+mdt = np.zeros((361, 30))
 
 for file in os.listdir():
-    if file[-8:] == 'geoid.nc':
+    if file[-6:] == 'MDT.nc':
         
         nc = Dataset(file, 'r')
         
-        ssh = ssh + nc.variables['Sea Surface Height'][:]
+        mdt = mdt + nc.variables['mean_dynamic_topography'][:]
         lat = nc.variables['Latitude'][:]
         lon = nc.variables['Longitude'][:]
         
         nc.close()
 
-ssh = ssh / 12
+mdt = mdt / 12
 
-nc = Dataset('2012_geoid_mean.nc', 'w', format='NETCDF4_CLASSIC')
-nc.description = yr + 'annual mean'
+nc = Dataset('2012_mdt_mean.nc', 'w', format='NETCDF4_CLASSIC')
 
 nc.createDimension('lat', np.size(lat))
 nc.createDimension('lon', np.size(lon))
 
 latitudes = nc.createVariable('Latitude', float, ('lat',))
 longitudes = nc.createVariable('Longitude', float, ('lon',))
-ssh_mean = nc.createVariable('Mean Sea Surface Height', float, ('lon','lat'))
+mdt_mean = nc.createVariable('annual_mean_dynamic_topography', float, ('lon','lat'))
 
 latitudes[:] = lat
 longitudes[:] = lon
-ssh_mean[:] = ssh
+mdt_mean[:] = mdt
 
 nc.close()
