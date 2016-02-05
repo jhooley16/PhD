@@ -57,7 +57,7 @@ for file in os.listdir():
         m.colorbar()
         A = np.std(mdt_anomaly)
         B = np.mean(mdt_anomaly)
-        pl.clim(B-2*A, B+2*A)
+        pl.clim(-0.45, 0.45)
         #m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
         pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_ssh_anomaly_above_GOCO05s_1degree_stereo.png', format='png', transparent=True)
         pl.close()
