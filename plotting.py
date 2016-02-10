@@ -8,7 +8,7 @@ os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/2012/MDT')
 
 for file in os.listdir():
     if file[-6:] == 'MDT.nc':
-        year = file[0:5]
+        year = file[0:4]
         month = file[4:6]
         nc = Dataset(file, 'r')
         lat = nc.variables['Latitude'][:]
