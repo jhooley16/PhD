@@ -29,7 +29,7 @@ for line in f:
 # 1 millibar = 100 Pa
 bpa_pascals = np.array(bpa_notide_nodrift) * 100
 
-# Calculate the approximate change in sea level necessary to produce the pressure change
+# Calculate the approximate change in sea level to produce the pressure change
 dh = - bpa_pascals / (1028 * 9.81)
 
 os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/2012/MDT/Anomalies')

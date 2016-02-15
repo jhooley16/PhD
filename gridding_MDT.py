@@ -17,6 +17,7 @@ for file in os.listdir():
         lat = nc.variables['lat'][:]
         lon = nc.variables['lon'][:]
         mdt = nc.variables['mean_dynamic_topography'][:]
+        ice_conc = nc.variables['sea_ice_concentration'][:]
     
         nc.close()
     
@@ -27,7 +28,8 @@ for file in os.listdir():
         grid_lon = data['Lon']
         grid_lat = data['Lat']
         
-        print(np.max(grid_mdt))
+        data = funct.grid(ice_conc, lon, lat, 1)
+        grid_ice = data['Grid']
     
         # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded
 
@@ -42,10 +44,12 @@ for file in os.listdir():
         latitudes = nc.createVariable('Latitude', float, ('lat',))
         longitudes = nc.createVariable('Longitude', float, ('lon',))
         gridded_mdt = nc.createVariable('mean_dynamic_topography', float, ('lon','lat'))
+        gridded_ice = nc.createVariable('sea_ice_concentration', float, ('lon','lat'))
 
         latitudes[:] = grid_lat
         longitudes[:] = grid_lon
         gridded_mdt[:] = grid_mdt
+        gridded_ice[:] = grid_ice
 
         nc.close()
         print('Complete!')

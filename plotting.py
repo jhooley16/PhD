@@ -14,6 +14,7 @@ for file in os.listdir():
         lat = nc.variables['Latitude'][:]
         lon = nc.variables['Longitude'][:]
         mdt = nc.variables['mean_dynamic_topography'][:]
+        ice_conc = nc.variables['sea_ice_concentration'][:]
         nc.close()
         
         grid_lats, grid_lons = np.meshgrid(lat, lon)
@@ -30,7 +31,8 @@ for file in os.listdir():
         stereo_x, stereo_y = m(grid_lons, grid_lats)
         m.pcolor(stereo_x, stereo_y, mdt)
         m.colorbar()
-        pl.clim(-5, 5)
+        pl.clim(5, -5)
+        m.contour(stereo_x, stereo_y, ice_conc, [70,])
         pl.savefig('Figures/'+ year + '_' + month + '_MDT_1degree_stereo.png', 
-            format='png', transparent=True)
+            format='png')
         pl.close()

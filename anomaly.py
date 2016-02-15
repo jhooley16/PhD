@@ -22,24 +22,26 @@ for file in os.listdir():
         nc = Dataset(file, 'r')
         
         mdt = nc.variables['mean_dynamic_topography'][:]
-        #ice_data = nc.variables['Sea Ice Concentration'][:]
+        ice_data = nc.variables['sea_ice_concentration'][:]
         
         nc.close()
         
         mdt_anomaly = mdt - mean_2012
         
-        nc = Dataset('Anomalies/' + year + month + '_mdt_anomaly.nc', 'w', FORMAT='NETCDF4_CLASSIC')
+        nc = Dataset('Anomalies/' + year + month + '_mdt_anomaly.nc', 'w', format='NETCDF4_CLASSIC')
         
         nc.createDimension('lat', np.size(lat))
         nc.createDimension('lon', np.size(lon))
         
         latitudes = nc.createVariable('Latitude', float, ('lat',))
         longitudes = nc.createVariable('Longitude', float, ('lon',))
-        mdt_anom = nc.createVariable('Mean Dynamic Height Anomaly', float, ('lon','lat'))
+        mdt_anom = nc.createVariable('dynamic_topography_anomaly', float, ('lon', 'lat'))
+        ice = nc.createVariable('sea_ice_concentration', float, ('lon', 'lat'))
         latitudes[:] = lat
         longitudes[:] = lon
         mdt_anom[:] = mdt_anomaly
-        
+        ice[:] = ice_data
+
         nc.close()
 
         grid_lats, grid_lons = np.meshgrid(lat, lon)
@@ -58,6 +60,6 @@ for file in os.listdir():
         A = np.std(mdt_anomaly)
         B = np.mean(mdt_anomaly)
         pl.clim(-0.45, 0.45)
-        #m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
-        pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_ssh_anomaly_above_GOCO05s_1degree_stereo.png', format='png', transparent=True)
+        m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
+        pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_ssh_anomaly_above_GOCO05s_1degree_stereo.png', format='png')
         pl.close()

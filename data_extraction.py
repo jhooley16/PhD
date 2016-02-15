@@ -68,6 +68,32 @@ for mnth in range(1,13):
 #    sea_ice_concentration[:] = ice_conc
 
     nc.close()
+    
+    # Create .nc file for the sea ice concentration data
+    nc = Dataset(year + month + '_icetrack.nc', 'w', format='NETCDF3_CLASSIC')
+    nc.createDimension('station', np.size(lat))
+    latitudes = nc.createVariable('lat', float, ('station',))
+    longitudes = nc.createVariable('lon', float, ('station',))
+    sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
+    
+    latitudes.long_name = 'latitude'
+    latitudes.standard_name = 'latitude'
+    latitudes.units = 'degrees_north'
+    longitudes.long_name = 'longitude'
+    longitudes.standard_name = 'longitude'
+    longitudes.units = 'degrees_east'
+    
+    sea_ice_concentration.standard_name = 'sea_ice_concentration'
+    sea_ice_concentration.long_name = 'sea_ice_concentration'
+    sea_ice_concentration.units = '%'
+    sea_ice_concentration.grid_mapping = 'crs'
+
+    latitudes[:] = lat
+    longitudes[:] = lon
+    sea_ice_concentration[:] = ice_conc
+
+    nc.close()
+    
     # In order for the track file to be used with GUT, it needs to be in 
     # netCDF3_classic format.
     nc = Dataset(year + month + '_track.nc', 'w', format='NETCDF3_CLASSIC')
