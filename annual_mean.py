@@ -8,20 +8,21 @@ yr = input('What year? (xxxx): ')
 
 os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/MDT')
 
-mdt = np.zeros((361, 30))
-
+mdt = []
+n = 0
 for file in os.listdir():
     if file[-6:] == 'MDT.nc':
         
         nc = Dataset(file, 'r')
         
-        mdt = mdt + nc.variables['mean_dynamic_topography'][:]
+        mdt.append(nc.variables['mean_dynamic_topography'][:])
         lat = nc.variables['Latitude'][:]
         lon = nc.variables['Longitude'][:]
         
         nc.close()
+        n = n + 1
 
-mdt = mdt / 12
+mdt_mean = np.ma.mean(mdt, axis=0)
 
 nc = Dataset('2012_mdt_mean.nc', 'w', format='NETCDF4_CLASSIC')
 
@@ -34,7 +35,7 @@ mdt_mean = nc.createVariable('annual_mean_dynamic_topography', float, ('lon','la
 
 latitudes[:] = lat
 longitudes[:] = lon
-mdt_mean[:] = mdt
+mdt2[:] = mdt_mean
 
 nc.close()
 
@@ -45,12 +46,12 @@ pl.clf()
 m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
 m.drawmapboundary()
 m.drawcoastlines(zorder=10)
-m.fillcontinents(zorder=10)
+#m.fillcontinents(zorder=10)
 m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
 m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
         
 stereo_x, stereo_y = m(grid_lons, grid_lats)
-m.pcolor(stereo_x, stereo_y, mdt)
+m.pcolor(stereo_x, stereo_y, mdt_mean)
 m.colorbar()
 #pl.clim(5, -5)
 #m.contour(stereo_x, stereo_y, ice_conc, [70,])
