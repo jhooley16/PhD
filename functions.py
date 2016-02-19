@@ -30,34 +30,10 @@ def month_data(directory):
         f.close()
     return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc}
 
-def month_data_nofilter(directory):
-    """Extract latitude, longitude, sea surface height, and surface ice concentration
-    data from all files in 'directory'.
-    eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'"""
-    files = os.listdir(directory)
-    lat = []
-    lon = []
-    ssh = []
-    ice_conc = []
-    for file in files:
-        f = open(file, 'r')
-        for line in f:
-            line = line.strip()
-            columns = line.split()
-            # If data point is from open ocean (1) or from a lead (2)
-            if columns[0] == '1' or columns[0] == '2':
-                # If data point is listed as 'valid'
-                if columns[1] == '1':
-                    lat.append(float(columns[5]))
-                    lon.append(float(columns[6]))
-                    ssh.append(float(columns[7]))
-                    ice_conc.append(float(columns[11]))
-        f.close()
-    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc}
-
 def day_data(day, directory):
     """Extract latitude, longitude, sea surface height, and surface ice concentration
-    data for a certain day in 'directory'.
+    data for a certain day in 'directory'. The data is taken from a certain area 
+    defined by the latitude and longitude limits. See the code for details.
     eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'
     day corresponds to the day in a particular month."""
     files = os.listdir(directory)
@@ -80,10 +56,14 @@ def day_data(day, directory):
                 if columns[1] == '1':
                     # If the ssh is less than 3m from the mean ssh
                     if float(columns[7]) - float(columns[8]) <= 3.:
-                        lat.append(float(columns[5]))
-                        lon.append(float(columns[6]))
-                        ssh.append(float(columns[7]))
-                        ice_conc.append(float(columns[11]))
+                        # If the latitude lies between
+                        if -60 > float(columns[5]) > -61:
+                            # If the longitude lies between
+                            if -54. > float(columns[6]) > -55.:
+                                lat.append(float(columns[5]))
+                                lon.append(float(columns[6]))
+                                ssh.append(float(columns[7]))
+                                ice_conc.append(float(columns[11]))
         f.close()
     return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc}
 
