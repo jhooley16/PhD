@@ -119,3 +119,6 @@ for mnth in range(1,13):
     longitudes[:] = lon
 
     nc.close()
+    
+    os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack '
+    + year + month + '_track.nc -OutFile ' + year + month + '_geoid_track.nc')
