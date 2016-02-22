@@ -8,6 +8,7 @@ yr = input('What year? (xxxx): ')
 
 day_mdt = 0
 mdt = []
+day_mdt2 = []
 
 for mnth in range(1, 13):
 
@@ -31,7 +32,6 @@ for mnth in range(1, 13):
         
         ### If there is no data in the area, assign a NaN to this ###
         if np.size(lat) == 0:
-            mdt.append(np.NaN)
             day_mdt = day_mdt + 1
         else:
             new_dir = '/Users/jmh2g09/Documents/PhD/Data/BPR/daily_data/'
@@ -85,6 +85,7 @@ for mnth in range(1, 13):
         
             mdt.append(np.nanmean(ssh - geoid_height))
             day_mdt = day_mdt + 1
+            day_mdt2.append(day_mdt)
 
 mdta = mdt - np.nanmean(mdt)
 
@@ -115,11 +116,31 @@ for line in f:
 bpa_pascals = np.array(bpa_millibars) * 100
 
 # Calculate the approximate change in sea level to produce the pressure change
-dh = bpa_pascals / (1025 * 9.81)
+dh = - bpa_pascals / (1025 * 9.81)
 
-pl.figure()
-pl.plot(day, 10 * dh)
-pl.scatter(np.arange(1, day_mdt + 1), mdta, marker='.')
-pl.xlabel('Day')
-pl.ylabel('MDT anomaly (m)')
+#pl.figure()
+#pl.plot(day, 10 * dh, color='b')
+#pl.plot(day_mdt2, mdta, color='r')
+#pl.xlabel('Day')
+#pl.ylabel('MDT anomaly (m)')
+#pl.show()
+
+# create the general figure
+fig1 = pl.figure()
+ 
+# and the first axes using subplot populated with data 
+ax1 = fig1.add_subplot(111)
+line1 = ax1.plot(day, dh, color='b')
+pl.ylabel('Bottom Pressure Anomaly (m)')
+ 
+# now, the second axes that shares the x-axis with the ax1
+ax2 = fig1.add_subplot(111, sharex=ax1, frameon=False)
+line2 = ax2.plot(day_mdt2, mdta, color='r')
+ax2.yaxis.tick_right()
+ax2.yaxis.set_label_position("right")
+pl.ylabel('Sea Surface Height Anomaly (m)')
+ 
+# for the legend, remember that we used two different axes so, we need 
+# to build the legend manually
+pl.legend((line1, line2), ('Bottom Pressure Anomaly (m)', 'Sea Surface Height Anomaly (m)'))
 pl.show()

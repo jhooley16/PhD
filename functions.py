@@ -57,9 +57,9 @@ def day_data(day, directory):
                     # If the ssh is less than 3m from the mean ssh
                     if float(columns[7]) - float(columns[8]) <= 3.:
                         # If the latitude lies between
-                        if -60 > float(columns[5]) > -61:
+                        if -59. > float(columns[5]) > -62.:
                             # If the longitude lies between
-                            if -54. > float(columns[6]) > -55.:
+                            if -53. > float(columns[6]) > -56.:
                                 lat.append(float(columns[5]))
                                 lon.append(float(columns[6]))
                                 ssh.append(float(columns[7]))
