@@ -130,7 +130,7 @@ fig1 = pl.figure()
  
 # and the first axes using subplot populated with data 
 ax1 = fig1.add_subplot(111)
-line1 = ax1.plot(day, dh, color='b')
+line1 = ax1.plot(day, funct.smooth(dh, window_len=30), color='b')
 pl.ylabel('Bottom Pressure Anomaly (m)')
  
 # now, the second axes that shares the x-axis with the ax1
