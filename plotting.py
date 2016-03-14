@@ -4,7 +4,9 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 import os
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/2012/MDT')
+yr = input('What year? (xxxx): ')
+
+os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/MDT')
 
 for file in os.listdir():
     if file[-6:] == 'MDT.nc':
@@ -24,7 +26,7 @@ for file in os.listdir():
         m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
         m.drawmapboundary()
         m.drawcoastlines(zorder=10)
-        m.fillcontinents(zorder=10)
+        #m.fillcontinents(zorder=10)
         m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
         m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
         

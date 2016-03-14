@@ -1,3 +1,6 @@
+### NOTE: This File is now obsolete and is replaced with gridding_MDT.py. ###
+
+
 import os
 import functions as funct
 from netCDF4 import Dataset

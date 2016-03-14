@@ -6,9 +6,9 @@ import matplotlib.pyplot as pl
 
 yr = input('What year? (xxxx): ')
 
-day_mdt = 0
+temp_day = 0
 mdt = []
-day_mdt2 = []
+day_mdt = []
 
 for mnth in range(1, 13):
 
@@ -32,7 +32,7 @@ for mnth in range(1, 13):
         
         ### If there is no data in the area, assign a NaN to this ###
         if np.size(lat) == 0:
-            day_mdt = day_mdt + 1
+            temp_day = temp_day + 1
         else:
             new_dir = '/Users/jmh2g09/Documents/PhD/Data/BPR/daily_data/'
         
@@ -84,8 +84,8 @@ for mnth in range(1, 13):
             nc.close()
         
             mdt.append(np.nanmean(ssh - geoid_height))
-            day_mdt = day_mdt + 1
-            day_mdt2.append(day_mdt)
+            temp_day = temp_day + 1
+            day_mdt.append(temp_day)
 
 mdta = mdt - np.nanmean(mdt)
 
@@ -116,18 +116,21 @@ for line in f:
 bpa_pascals = np.array(bpa_millibars) * 100
 
 # Calculate the approximate change in sea level to produce the pressure change
-dh = - bpa_pascals / (1025 * 9.81)
+dh = bpa_pascals / (1025 * 9.81)
 
-#pl.figure()
-#pl.plot(day, 10 * dh, color='b')
-#pl.plot(day_mdt2, mdta, color='r')
-#pl.xlabel('Day')
-#pl.ylabel('MDT anomaly (m)')
-#pl.show()
+match_dh = []
+for iday in day_mdt:
+    if iday == day:
+        I = day.index(iday)
+        match_dh.append(dh[I])
+
+print('the size of dh: ', np.size(match_dh), 'the size of mtda', np.size(mdta))
+pl.figure()
+pl.scatter(match_dh, mdta)
+pl.show()
 
 # create the general figure
 fig1 = pl.figure()
- 
 # and the first axes using subplot populated with data 
 ax1 = fig1.add_subplot(111)
 line1 = ax1.plot(day, funct.smooth(dh, window_len=30), color='b')
@@ -135,7 +138,7 @@ pl.ylabel('Bottom Pressure Anomaly (m)')
  
 # now, the second axes that shares the x-axis with the ax1
 ax2 = fig1.add_subplot(111, sharex=ax1, frameon=False)
-line2 = ax2.plot(day_mdt2, mdta, color='r')
+line2 = ax2.plot(day_mdt, mdta, color='r')
 ax2.yaxis.tick_right()
 ax2.yaxis.set_label_position("right")
 pl.ylabel('Sea Surface Height Anomaly (m)')
