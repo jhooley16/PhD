@@ -23,12 +23,12 @@ for file in os.listdir():
     
         # Grid mean dynamic topography to a 1-degree grid
 
-        data = funct.grid(mdt, lon, lat, 1)
+        data = funct.grid05(mdt, lon, lat, 1)
         grid_mdt = data['Grid']
         grid_lon = data['Lon']
         grid_lat = data['Lat']
         
-        data = funct.grid(ice_conc, lon, lat, 1)
+        data = funct.grid05(ice_conc, lon, lat, 1)
         grid_ice = data['Grid']
     
         # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded

@@ -118,32 +118,24 @@ bpa_pascals = np.array(bpa_millibars) * 100
 # Calculate the approximate change in sea level to produce the pressure change
 dh = bpa_pascals / (1025 * 9.81)
 
-match_dh = []
-for iday in day_mdt:
-    if iday == day:
-        I = day.index(iday)
-        match_dh.append(dh[I])
 
-print('the size of dh: ', np.size(match_dh), 'the size of mtda', np.size(mdta))
-pl.figure()
-pl.scatter(match_dh, mdta)
-pl.show()
 
-# create the general figure
-fig1 = pl.figure()
-# and the first axes using subplot populated with data 
-ax1 = fig1.add_subplot(111)
-line1 = ax1.plot(day, funct.smooth(dh, window_len=30), color='b')
-pl.ylabel('Bottom Pressure Anomaly (m)')
- 
-# now, the second axes that shares the x-axis with the ax1
-ax2 = fig1.add_subplot(111, sharex=ax1, frameon=False)
-line2 = ax2.plot(day_mdt, mdta, color='r')
-ax2.yaxis.tick_right()
-ax2.yaxis.set_label_position("right")
-pl.ylabel('Sea Surface Height Anomaly (m)')
- 
-# for the legend, remember that we used two different axes so, we need 
-# to build the legend manually
-pl.legend((line1, line2), ('Bottom Pressure Anomaly (m)', 'Sea Surface Height Anomaly (m)'))
-pl.show()
+# Save this data in a file for use later
+
+nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/BPR/' + yr + '_BPR.nc', 'w', FORMAT='NETCDF3_CLASSIC' )
+
+nc.createDimension('bp_length', np.size(dh))
+nc.createDimension('ssha_length', np.size(mdta))
+
+BP_data = nc.createVariable('BottomPressureAnomaly', float, ('bp_length',))
+BP_time = nc.createVariable('BottomPressureAnomaly_time', float, ('bp_length',))
+
+SSHA_data = nc.createVariable('SSHAnomaly', float, ('ssha_length',))
+SSHA_time = nc.createVariable('SSHAnomaly_time', float, ('ssha_length',))
+
+BP_data[:] = dh
+BP_time[:] = day
+SSHA_data[:] = mdta
+SSHA_time[:] = day_mdt
+
+nc.close()

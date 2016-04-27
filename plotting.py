@@ -19,6 +19,10 @@ for file in os.listdir():
         ice_conc = nc.variables['sea_ice_concentration'][:]
         nc.close()
         
+        for ilat in range(1, np.shape(mdt)[1]):
+            if np.all(np.isnan(mdt[:, ilat])):
+                print(ilat)
+        
         grid_lats, grid_lons = np.meshgrid(lat, lon)
 
         pl.figure()
@@ -26,7 +30,7 @@ for file in os.listdir():
         m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
         m.drawmapboundary()
         m.drawcoastlines(zorder=10)
-        #m.fillcontinents(zorder=10)
+        m.fillcontinents(zorder=10)
         m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
         m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
         
@@ -34,7 +38,7 @@ for file in os.listdir():
         m.pcolor(stereo_x, stereo_y, mdt)
         m.colorbar()
         pl.clim(5, -5)
-        m.contour(stereo_x, stereo_y, ice_conc, [70,])
+        m.contour(stereo_x, stereo_y, ice_conc, [60,])
         pl.savefig('Figures/'+ year + '_' + month + '_MDT_1degree_stereo.png', 
             format='png')
         pl.close()

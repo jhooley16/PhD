@@ -5,10 +5,11 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
 yr = input('What year? (xxxx): ')
+ice_contour = input('Draw Ice-Edge at what concentration? (%): ')
 
 os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/MDT')
 
-nc = Dataset('2012_mdt_mean.nc', 'r')
+nc = Dataset(yr + '_mdt_mean.nc', 'r')
 mean_2012 = nc.variables['annual_mean_dynamic_topography'][:]
 lat = nc.variables['Latitude'][:]
 lon = nc.variables['Longitude'][:]
@@ -18,7 +19,6 @@ for file in os.listdir():
     if file[-6:] == 'MDT.nc':
         year = file[:4]
         month = file[4:6]
-        print(file)
         nc = Dataset(file, 'r')
         
         mdt = nc.variables['mean_dynamic_topography'][:]
@@ -60,6 +60,6 @@ for file in os.listdir():
         A = np.std(mdt_anomaly)
         B = np.mean(mdt_anomaly)
         pl.clim(-0.45, 0.45)
-        m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[70])
+        m.contour(stereo_x, stereo_y, ice_data, colors='k', levels=[float(ice_contour)])
         pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_ssh_anomaly_above_GOCO05s_1degree_stereo.png', format='png')
         pl.close()

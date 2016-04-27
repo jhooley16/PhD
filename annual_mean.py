@@ -41,23 +41,23 @@ mdt_annual_mean[:] = mdt_mean
 
 nc.close()
 
-print(mdt_mean.min())
-loc = np.where(mdt_mean == mdt_mean.min())
-mdt_mean[(loc[0], loc[1])] = mdt_mean[(loc[0], loc[1])] * - 100
+#print(mdt_mean.min())
+#loc = np.where(mdt_mean == mdt_mean.min())
+#mdt_mean[(loc[0], loc[1])] = mdt_mean[(loc[0], loc[1])] * - 100
 
 pl.figure()
 pl.clf()
 m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
 m.drawmapboundary()
 m.drawcoastlines(zorder=10)
-#m.fillcontinents(zorder=10)
+m.fillcontinents(zorder=10)
 m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
 m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
 grid_lats, grid_lons = np.meshgrid(lat, lon)
 stereo_x, stereo_y = m(grid_lons, grid_lats)
 m.pcolor(stereo_x, stereo_y, mdt_mean)
 m.colorbar()
-#pl.clim(5, -5)
+pl.clim(3, -3)
 pl.savefig('Figures/' + yr + '_mean_MDT_1degree_stereo.png', format='png')
 pl.close()
 

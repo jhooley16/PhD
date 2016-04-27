@@ -18,12 +18,13 @@ for mnth in range(1,13):
     print(month, year)
 
     data = funct.month_data(directory)
-
+    
     lat = data['lat']
     lon = data['lon']
     ssh = data['ssh']
     ice_conc = data['ice_conc']
-
+    surface_type = data['type']
+    print('Data Extracted')
     # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Raw
 
     os.chdir('/Users/jmh2g09/Documents/PhD/Data/Raw/' + year)
@@ -35,7 +36,7 @@ for mnth in range(1,13):
     latitudes = nc.createVariable('lat', float, ('station',))
     longitudes = nc.createVariable('lon', float, ('station',))
     sea_surface_height = nc.createVariable('sea_surface_height', float, ('station',))
-#    sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
+    surface = nc.createVariable('surface_type', 'i', ('station',))
     crs = nc.createVariable('crs', 'i', ())
     
     latitudes.long_name = 'latitude'
@@ -51,11 +52,6 @@ for mnth in range(1,13):
     sea_surface_height.grid_mapping = 'crs'
     sea_surface_height.tide_system = 'tide_free'
     
-#    sea_ice_concentration.standard_name = 'sea_ice_concentration'
-#    sea_ice_concentration.long_name = 'sea_ice_concentration'
-#    sea_ice_concentration.units = '%'
-#    sea_ice_concentration.grid_mapping = 'crs'
-    
     crs.grid_mapping_name = 'latitude_longitude'
     crs.semi_major_axis = 6378137.
     crs.inverse_flattening = 298.257222101004
@@ -65,60 +61,60 @@ for mnth in range(1,13):
     latitudes[:] = lat
     longitudes[:] = lon
     sea_surface_height[:] = ssh
-#    sea_ice_concentration[:] = ice_conc
-
+    surface[:] = surface_type
+    
     nc.close()
     
     # Create .nc file for the sea ice concentration data
-    nc = Dataset(year + month + '_icetrack.nc', 'w', format='NETCDF3_CLASSIC')
-    nc.createDimension('station', np.size(lat))
-    latitudes = nc.createVariable('lat', float, ('station',))
-    longitudes = nc.createVariable('lon', float, ('station',))
-    sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
+    #nc = Dataset(year + month + '_icetrack.nc', 'w', format='NETCDF3_CLASSIC')
+    #nc.createDimension('station', np.size(lat))
+    #latitudes = nc.createVariable('lat', float, ('station',))
+    #longitudes = nc.createVariable('lon', float, ('station',))
+    #sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
     
-    latitudes.long_name = 'latitude'
-    latitudes.standard_name = 'latitude'
-    latitudes.units = 'degrees_north'
-    longitudes.long_name = 'longitude'
-    longitudes.standard_name = 'longitude'
-    longitudes.units = 'degrees_east'
+    #latitudes.long_name = 'latitude'
+    #latitudes.standard_name = 'latitude'
+    #latitudes.units = 'degrees_north'
+    #longitudes.long_name = 'longitude'
+    #longitudes.standard_name = 'longitude'
+    #longitudes.units = 'degrees_east'
     
-    sea_ice_concentration.standard_name = 'sea_ice_concentration'
-    sea_ice_concentration.long_name = 'sea_ice_concentration'
-    sea_ice_concentration.units = '%'
-    sea_ice_concentration.grid_mapping = 'crs'
+    #sea_ice_concentration.standard_name = 'sea_ice_concentration'
+    #sea_ice_concentration.long_name = 'sea_ice_concentration'
+    #sea_ice_concentration.units = '%'
+    #sea_ice_concentration.grid_mapping = 'crs'
 
-    latitudes[:] = lat
-    longitudes[:] = lon
-    sea_ice_concentration[:] = ice_conc
+    #latitudes[:] = lat
+    #longitudes[:] = lon
+    #sea_ice_concentration[:] = ice_conc
 
-    nc.close()
+    #nc.close()
     
     # In order for the track file to be used with GUT, it needs to be in 
     # netCDF3_classic format.
-    nc = Dataset(year + month + '_track.nc', 'w', format='NETCDF3_CLASSIC')
+    #nc = Dataset(year + month + '_track.nc', 'w', format='NETCDF3_CLASSIC')
 
-    nc.createDimension('station', np.size(lat))
+    #nc.createDimension('station', np.size(lat))
 
-    longitudes = nc.createVariable('lon', float, ('station',))
-    latitudes = nc.createVariable('lat', float, ('station',))
-    crs = nc.createVariable('crs', 'i', ())
+    #longitudes = nc.createVariable('lon', float, ('station',))
+    #latitudes = nc.createVariable('lat', float, ('station',))
+    #crs = nc.createVariable('crs', 'i', ())
 
-    latitudes.long_name = 'latitude'
-    latitudes.standard_name = 'latitude'
-    latitudes.units = 'degrees_north'
-    longitudes.long_name = 'longitude'
-    longitudes.standard_name = 'longitude'
-    longitudes.units = 'degrees_east'
-    crs.semi_major_axis = 6378137.
-    crs.inverse_flattening = 298.257222101004
-    crs.earth_gravity_constant = 398600500000000.
-    crs.earth_rotation_rate = 7.292115e-05
+    #latitudes.long_name = 'latitude'
+    #latitudes.standard_name = 'latitude'
+    #latitudes.units = 'degrees_north'
+    #longitudes.long_name = 'longitude'
+    #longitudes.standard_name = 'longitude'
+    #longitudes.units = 'degrees_east'
+    #crs.semi_major_axis = 6378137.
+    #crs.inverse_flattening = 298.257222101004
+    #crs.earth_gravity_constant = 398600500000000.
+    #crs.earth_rotation_rate = 7.292115e-05
 
-    latitudes[:] = lat
-    longitudes[:] = lon
+    #latitudes[:] = lat
+    #longitudes[:] = lon
 
-    nc.close()
-    
-    os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack '
-    + year + month + '_track.nc -OutFile ' + year + month + '_geoid_track.nc')
+    #nc.close()
+    #print('Generating geoid file')
+    #os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack '
+    #+ year + month + '_track.nc -OutFile ' + year + month + '_geoid_track.nc')
