@@ -58,6 +58,13 @@ for mnth in range(1,13):
 print(monthly_offset)
 
 pl.figure()
+pl.hist(offset)
+pl.title(yr + ' Circumpolar offset histogram')
+pl.xlabel('Offset Bin (m)')
+pl.ylabel('Frequency')
+pl.show()
+
+pl.figure()
 pl.plot(range(1,13), monthly_offset)
 pl.title(yr + ' monthly offset between lead and ocean ssh (m)')
 pl.ylabel('ssh offset (m)')
