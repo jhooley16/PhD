@@ -118,5 +118,5 @@ print('The mean distance between points is: ' + str(np.mean(distance)/1000) + ' 
 print('The number of orbits used is: ' + str(len(correlation)//2))
 pl.figure()
 pl.plot(range(len(mean_correlation)) * np.mean(distance)/1000, mean_correlation)
-#pl.xlim([0, 60])
+pl.xlim([0, 150])
 pl.show()
