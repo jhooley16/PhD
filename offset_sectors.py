@@ -141,3 +141,8 @@ for year in range(2010, 2017):
     pl.xlim([1, 12])
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Quality Control/' + yr + '_monthly_offset_sectors.png', format='png')
     pl.close()
+    
+    average_circumpolar_offset += monthly_offset
+
+average_circumpolar_offset /= 6
+
