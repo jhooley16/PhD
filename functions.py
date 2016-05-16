@@ -2,8 +2,9 @@ import os
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import decimal
+import scipy.ndimage
 
-def month_data(directory):
+def month_data(directory, lead_offset=0.):
     """Extract latitude, longitude, sea surface height, and surface ice concentration
     data from all files in 'directory'.
     eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'"""
@@ -13,23 +14,115 @@ def month_data(directory):
     ssh = []
     type = []
     ice_conc = []
+    print('Applying offset of... ', lead_offset)
     for file in files:
+        lat_sub = []
+        lon_sub = []
+        ssh_sub = []
+        type_sub = []
+        ice_conc_sub = []
+        lat_sub_asc = []
+        lon_sub_asc = []
+        ssh_sub_asc = []
+        type_sub_asc = []
+        ice_conc_sub_asc = []
+        lat_sub_desc = []
+        lon_sub_desc = []
+        ssh_sub_desc = []
+        type_sub_desc = []
+        ice_conc_sub_desc = []
         f = open(file, 'r')
         for line in f:
             line = line.strip()
             columns = line.split()
-            # If data point is from open ocean (1) or from a lead (2)
-            if columns[0] == '1' or columns[0] == '2':
-                # If data point is listed as 'valid'
-                if columns[1] == '1':
-                    # If the ssh is less than 3m from the mean ssh
-                    #if float(columns[7]) - float(columns[8]) <= 3.:
-                    lat.append(float(columns[5]))
-                    lon.append(float(columns[6]))
-                    ssh.append(float(columns[7]))
-                    ice_conc.append(float(columns[11]))
-                    type.append(float(columns[0]))
+            # If data point is listed as 'valid'
+            if columns[1] == '1':
+                # If data point is from open ocean (1) or from a lead (2)
+                if columns[0] == '1' or columns[0] == '2':
+                    # If the ssh is less than 20 m 
+                    if abs(float(columns[7])) < 20.:
+                        # If the ssh is less than 3 m from the mean ssh
+                        if float(columns[7]) - float(columns[8]) <= 3.:
+                            lat_sub.append(float(columns[5]))
+                            lon_sub.append(float(columns[6]))
+                            # If the ssh is from a lead, apply the offset
+                            if columns[0] == '2':
+                                ssh_sub.append(float(columns[7]) + lead_offset)
+                            # If the ssh is from the open ocean, don't apply offset
+                            if columns[0] == '1':
+                                ssh_sub.append(float(columns[7]))
+                            ice_conc_sub.append(float(columns[11]))
+                            type_sub.append(float(columns[0]))
         f.close()
+        
+        # Do the DESCENDING tracks        
+        descending = np.where(np.gradient(lat_sub) < 0.)[0]
+        # If there are any descending tracks
+        if len(descending) > 0.:
+            ssh_sub_desc = ssh_sub[descending[0]:descending[-1]]
+            lat_sub_desc = lat_sub[descending[0]:descending[-1]]
+            lon_sub_desc = lon_sub[descending[0]:descending[-1]]
+            ice_conc_sub_desc = ice_conc_sub[descending[0]:descending[-1]]
+            type_sub_desc = type_sub[descending[0]:descending[-1]]
+            
+            bad_elements = []
+            for issh in range(len(ssh_sub_desc)):
+                # If the value is greater than 3 std from the mean
+                if np.mean(ssh_sub_desc) - 3*np.std(ssh_sub_desc) > ssh_sub_desc[issh] > np.mean(ssh_sub_desc) + 3*np.std(ssh_sub_desc):
+                    bad_elements.append(issh)
+            for issh in range(len(ssh_sub_desc)-1):
+                # If the gradient between this point and the next point is greater than .5 m
+                if abs(ssh_sub_desc[issh] - ssh_sub_desc[issh + 1]) > .5:
+                    bad_elements.append(issh + 1)
+            
+            # remove the points that meet the above criteria
+            # In reverse order to avoid index problems
+            for bad in sorted(np.unique(bad_elements), reverse=True):
+                del ssh_sub_desc[bad]
+                del lat_sub_desc[bad]
+                del lon_sub_desc[bad]
+                del ice_conc_sub_desc[bad]
+                del type_sub_desc[bad]
+            lat += lat_sub_desc
+            lon += lon_sub_desc
+            type += type_sub_desc
+            ice_conc += ice_conc_sub_desc
+            # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
+            ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc, 40.))
+    
+        ascending = np.where(np.gradient(lat_sub) > 0.)[0]
+        # If there are any ascending tracks
+        if len(ascending) > 0.:
+            ssh_sub_asc = ssh_sub[ascending[1]:ascending[-1]]
+            lat_sub_asc = lat_sub[ascending[1]:ascending[-1]]
+            lon_sub_asc = lon_sub[ascending[1]:ascending[-1]]
+            ice_conc_sub_asc = ice_conc_sub[ascending[1]:ascending[-1]]
+            type_sub_asc = type_sub[ascending[1]:ascending[-1]]
+        
+            bad_elements = []
+            # Do the Ascending tracks
+            for issh in range(len(ssh_sub_asc)):
+                # If the value is greater than 3 std from the mean
+                if np.mean(ssh_sub_asc) - 3*np.std(ssh_sub_asc) > ssh_sub_asc[issh] > np.mean(ssh_sub_asc) + 3*np.std(ssh_sub_asc):
+                    bad_elements.append(issh)
+            for issh in range(len(ssh_sub_asc)-1):
+                # If the gradient between this point and the next point is greater than .5 m
+                if abs(ssh_sub_asc[issh] - ssh_sub_asc[issh + 1]) > .5:
+                    bad_elements.append(issh + 1)
+                
+            for bad in sorted(np.unique(bad_elements), reverse=True):
+                del ssh_sub_asc[bad]
+                del lat_sub_asc[bad]
+                del lon_sub_asc[bad]
+                del ice_conc_sub_asc[bad]
+                del type_sub_asc[bad]
+            lat += lat_sub_asc
+            lon += lon_sub_asc
+            type += type_sub_asc
+            ice_conc += ice_conc_sub_asc
+            # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
+            ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc, 40.))
+
     return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc, 'type': type}
 
 def day_data(day, directory):
@@ -113,8 +206,8 @@ def grid05(data, lon_data, lat_data, lat_res, lon_res):
                 urcrnrlon=180, resolution='c')
     x_cyl, y_cyl = m(lon_data, lat_data)
     
-    x_range = np.arange(np.round(np.min(x_cyl)) - 0.5, np.round(np.max(x_cyl)) + 0.5 + lon_res, lon_res)
-    y_range = np.arange(np.round(np.min(y_cyl)) - 0.5, np.round(np.max(y_cyl)) + 0.5 + lat_res, lat_res)
+    x_range = np.arange(np.round(np.min(x_cyl)), np.round(np.max(x_cyl))+ lon_res, lon_res)
+    y_range = np.arange(np.round(np.min(y_cyl)), np.round(np.max(y_cyl))+ lat_res, lat_res)
     xy_grid = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
     xy_count = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
 
@@ -186,56 +279,40 @@ def grid(data, lon_data, lat_data, res):
 
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
 
-def smooth(x,window_len=11,window='hanning'):
-    """smooth the data using a window with requested size.
-
-    This method is based on the convolution of a scaled window with the signal.
-    The signal is prepared by introducing reflected copies of the signal
-    (with the window size) in both ends so that transient parts are minimized
-    in the begining and end part of the output signal.
-
-    input:
-        x: the input signal
-        window_len: the dimension of the smoothing window; should be an odd integer
-        window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
-            flat window will produce a moving average smoothing.
-
-    output:
-        the smoothed signal
-
-    example:
-
-    t=linspace(-2,2,0.1)
-    x=sin(t)+randn(len(t))*0.1
-    y=smooth(x)
-
-    see also:
-
-    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
-    scipy.signal.lfilter
-
-    TODO: the window parameter could be the window itself if an array instead of a string
-    NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
-    """
-
-    if x.ndim != 1:
-        raise ValueError("smooth only accepts 1 dimension arrays.")
-
-    if x.size < window_len:
-        raise ValueError("Input vector needs to be bigger than window size.")
-
-    if window_len<3:
-        return x
-
-    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
-
-    s=np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
-    #print(len(s))
-    if window == 'flat': #moving average
-        w=np.ones(window_len,'d')
-    else:
-        w=eval('np.'+window+'(window_len)')
-
-    y=np.convolve(w/w.sum(),s,mode='valid')
-    return y[(window_len/2-1):-(window_len/2)]
+def ocean_lead_offset(month):
+    if month == '01':
+        return 0.053
+    if month == '02':
+        return 0.042
+    if month == '03':
+        return 0.044
+    if month == '04':
+        return 0.059
+    if month == '05':
+        return 0.062
+    if month == '06':
+        return 0.089
+    if month == '07':
+        return 0.108
+    if month == '08':
+        return 0.105
+    if month == '09':
+        return 0.092
+    if month == '10':
+        return 0.096
+    if month == '11':
+        return 0.059
+    if month == '12':
+        return 0.047
+#January offset:  0.0532795957319
+#Febuary offset:  0.0424895753339
+#March offset:  0.044196774024
+#April offset:  0.058855642473
+#May offset:  0.0623327136638
+#June offset:  0.0885369699514
+#July offset:  0.108297693989
+#August offset:  0.104956289149
+#September offset:  0.0924955874413
+#October offset:  0.0964708361887
+#November offset:  0.0591056776193
+#December offset:  0.0469972667101
