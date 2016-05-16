@@ -3,9 +3,10 @@ import functions as funct
 import numpy as np
 import matplotlib.pyplot as pl
 
-for year in range(2010, 2017):
-    print(year)
-    yr = str(year)
+average_circumpolar_offset = np.zeros(12)
+
+for yr in ['2011', '2012', '2013', '2014', '2015']:
+    print(yr)
     
     monthly_offset_WEDD = []
     monthly_offset_IND = []
@@ -17,6 +18,7 @@ for year in range(2010, 2017):
     hist_offset_IND = []
     hist_offset_ROSS = []
     hist_offset_AMBEL = []
+    hist_offset_circum = []
 
     month_number = []
 
@@ -26,15 +28,17 @@ for year in range(2010, 2017):
         offset_IND = []
         offset_ROSS = []
         offset_AMBEL = []
+        circum_offset = []
 
         if os.path.isdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + yr + mnth + '_elev'):
             os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + yr + mnth + '_elev')
             month_number.append(int(mnth))
         
             for file in os.listdir():
-
-                ice_edge = [1] * 10 + [2] * 10
-                ice_edge2 = [2] * 10 + [1] * 10
+                
+                # 200 points equals the decorrelation scale (50 km) 
+                ice_edge = [1] * 50 + [2] * 50
+                ice_edge2 = [2] * 50 + [1] * 50
 
                 ssha = []
                 lon = []
@@ -54,69 +58,74 @@ for year in range(2010, 2017):
 
                 iedge = []
                 for it in range(len(surface_type)):
-                    if surface_type[it:it + 20] == ice_edge:
-                        iedge.append(it + 10)
-                    if surface_type[it:it + 20] == ice_edge2:
-                        iedge.append(it + 10)
-
+                    if surface_type[it:it + len(ice_edge)] == ice_edge:
+                        iedge.append(it + len(ice_edge)//2)
+                    if surface_type[it:it + len(ice_edge)] == ice_edge2:
+                        iedge.append(it + len(ice_edge)//2)
+                
                 for step in iedge:
-                    if surface_type[step - 10:step] == [1] * 10:
+                    if surface_type[step - len(ice_edge)//2:step] == [1] * (len(ice_edge)//2):
                         # Ocean to Ice step
-                        if abs(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10])) < .5:
+                        if abs(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2])) < .5:
+                            # # Calculate circumpolar offset
+                            circum_offset.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                            hist_offset_circum.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
                             # Choose what the sector the offset point lies within
-                            if -60. <= np.mean(lon[step - 10:step + 10]) <= 0.:
+                            if -60. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= 0.:
                                 #print('Weddell')
-                                offset_WEDD.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                                hist_offset_WEDD.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                            if 0 <= np.mean(lon[step - 10:step + 10]) <= 160.:
+                                offset_WEDD.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                                hist_offset_WEDD.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                            if 0 <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= 160.:
                                 #print('Indian')
-                                offset_IND.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                                hist_offset_IND.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                            if 160. <= np.mean(lon[step - 10:step + 10]) <= 180.:
+                                offset_IND.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                                hist_offset_IND.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                            if 160. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= 180.:
                                 #print('Ross')
-                                offset_ROSS.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                                hist_offset_ROSS.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                            if -180. <= np.mean(lon[step - 10:step + 10]) <= -130.:
+                                offset_ROSS.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                                hist_offset_ROSS.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                            if -180. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= -130.:
                                 #print('Ross')
-                                offset_ROSS.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                                hist_offset_ROSS.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                            if -130. <= np.mean(lon[step - 10:step + 10]) <= -60.:
+                                offset_ROSS.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                                hist_offset_ROSS.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                            if -130. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= -60.:
                                 #print('Amundsen-Bellingshausen')
-                                offset_AMBEL.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
-                                hist_offset_AMBEL.append(np.mean(ssha[step - 10:step]) - np.mean(ssha[step:step + 10]))
+                                offset_AMBEL.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
+                                hist_offset_AMBEL.append(np.mean(ssha[step - len(ice_edge)//2:step]) - np.mean(ssha[step:step + len(ice_edge)//2]))
 
 
-                    if surface_type[step - 10:step] == [2] * 10:
+                    if surface_type[step - len(ice_edge)//2:step] == [2] * (len(ice_edge)//2):
                         # Ice to Ocean step
-                        if abs(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step])) < .5:
+                        if abs(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step])) < .5:
+                            # Calculate circumpolar offset
+                            circum_offset.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                            hist_offset_circum.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
                             # Choose what the sector the offset point lies within
-                            if -60. <= np.mean(lon[step - 10:step + 10]) <= 0.:
+                            if -60. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= 0.:
                                 #print('Weddell')
-                                offset_WEDD.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                                hist_offset_WEDD.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                            if 0 <= np.mean(lon[step - 10:step + 10]) <= 160.:
+                                offset_WEDD.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                                hist_offset_WEDD.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                            if 0 <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= 160.:
                                 #print('Indian')
-                                offset_IND.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                                hist_offset_IND.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                            if 160. <= np.mean(lon[step - 10:step + 10]) <= 180.:
+                                offset_IND.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                                hist_offset_IND.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                            if 160. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= 180.:
                                 #print('Ross')
-                                offset_ROSS.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                                hist_offset_ROSS.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                            if -180. <= np.mean(lon[step - 10:step + 10]) <= -130.:
+                                offset_ROSS.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                                hist_offset_ROSS.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                            if -180. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= -130.:
                                 #print('Ross')
-                                offset_ROSS.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                                hist_offset_ROSS.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                            if -130. <= np.mean(lon[step - 10:step + 10]) <= -60.:
+                                offset_ROSS.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                                hist_offset_ROSS.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                            if -130. <= np.mean(lon[step - len(ice_edge)//2:step + len(ice_edge)//2]) <= -60.:
                                 #print('Amundsen-Bellingshausen')
-                                offset_AMBEL.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
-                                hist_offset_AMBEL.append(np.mean(ssha[step:step + 10]) - np.mean(ssha[step - 10:step]))
+                                offset_AMBEL.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
+                                hist_offset_AMBEL.append(np.mean(ssha[step:step + len(ice_edge)//2]) - np.mean(ssha[step - len(ice_edge)//2:step]))
 
             monthly_offset_WEDD.append(np.mean(offset_WEDD))
             monthly_offset_IND.append(np.mean(offset_IND))
             monthly_offset_ROSS.append(np.mean(offset_ROSS))  
             monthly_offset_AMBEL.append(np.mean(offset_AMBEL))
-            monthly_offset.append((np.mean(offset_WEDD) + np.mean(offset_IND)
-                + np.mean(offset_ROSS) + np.mean(offset_AMBEL))/4)
+            monthly_offset.append(np.mean(circum_offset))
 
     pl.figure()
     pl.hist([hist_offset_WEDD, hist_offset_IND, hist_offset_ROSS, hist_offset_AMBEL], label=['Weddell', 'Indian', 'Ross', 'Amundsen-Bellingshausen'])
@@ -142,7 +151,35 @@ for year in range(2010, 2017):
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Quality Control/' + yr + '_monthly_offset_sectors.png', format='png')
     pl.close()
     
-    average_circumpolar_offset += monthly_offset
+    average_circumpolar_offset += np.array(monthly_offset)
 
-average_circumpolar_offset /= 6
+average_circumpolar_offset /= 5
+
+print(average_circumpolar_offset)
+
+print('January offset: ', average_circumpolar_offset[0])
+print('Febuary offset: ', average_circumpolar_offset[1])
+print('March offset: ', average_circumpolar_offset[2])
+print('April offset: ', average_circumpolar_offset[3])
+print('May offset: ', average_circumpolar_offset[4])
+print('June offset: ', average_circumpolar_offset[5])
+print('July offset: ', average_circumpolar_offset[6])
+print('August offset: ', average_circumpolar_offset[7])
+print('September offset: ', average_circumpolar_offset[8])
+print('October offset: ', average_circumpolar_offset[9])
+print('November offset: ', average_circumpolar_offset[10])
+print('December offset: ', average_circumpolar_offset[11])
+
+#January offset:  0.0532795957319
+#Febuary offset:  0.0424895753339
+#March offset:  0.044196774024
+#April offset:  0.058855642473
+#May offset:  0.0623327136638
+#June offset:  0.0885369699514
+#July offset:  0.108297693989
+#August offset:  0.104956289149
+#September offset:  0.0924955874413
+#October offset:  0.0964708361887
+#November offset:  0.0591056776193
+#December offset:  0.0469972667101
 
