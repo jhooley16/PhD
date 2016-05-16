@@ -44,7 +44,7 @@ for imnth in range(1,13):
 
     mdt = sea_surface_height - geoid_height
     
-    nc_mdt = Dataset('MDT_track/' + year + month + '_MDT_track.nc', 'w', format='NETCDF3_CLASSIC')
+    nc_mdt = Dataset('DOT_track/' + year + month + '_DOT_track.nc', 'w', format='NETCDF3_CLASSIC')
     
     nc_mdt.createDimension('station', np.size(lat))
     
