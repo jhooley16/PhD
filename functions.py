@@ -14,7 +14,6 @@ def month_data(directory, lead_offset=0.):
     ssh = []
     type = []
     ice_conc = []
-    print('Applying offset of... ', lead_offset)
     for file in files:
         lat_sub = []
         lon_sub = []
@@ -39,89 +38,89 @@ def month_data(directory, lead_offset=0.):
             if columns[1] == '1':
                 # If data point is from open ocean (1) or from a lead (2)
                 if columns[0] == '1' or columns[0] == '2':
-                    # If the ssh is less than 20 m 
-                    if abs(float(columns[7])) < 20.:
-                        # If the ssh is less than 3 m from the mean ssh
-                        if float(columns[7]) - float(columns[8]) <= 3.:
-                            lat_sub.append(float(columns[5]))
-                            lon_sub.append(float(columns[6]))
-                            # If the ssh is from a lead, apply the offset
-                            if columns[0] == '2':
-                                ssh_sub.append(float(columns[7]) + lead_offset)
-                            # If the ssh is from the open ocean, don't apply offset
-                            if columns[0] == '1':
-                                ssh_sub.append(float(columns[7]))
-                            ice_conc_sub.append(float(columns[11]))
-                            type_sub.append(float(columns[0]))
+                    # If the ssh is less than 3 m from the mean ssh
+                    if float(columns[7]) - float(columns[8]) <= 3.:
+                        lat_sub.append(float(columns[5]))
+                        lon_sub.append(float(columns[6]))
+                        # If the ssh is from a lead, apply the offset
+                        if columns[0] == '2':
+                            ssh_sub.append(float(columns[7]) + lead_offset)
+                        # If the ssh is from the open ocean, don't apply offset
+                        if columns[0] == '1':
+                            ssh_sub.append(float(columns[7]))
+                        ice_conc_sub.append(float(columns[11]))
+                        type_sub.append(float(columns[0]))
         f.close()
-        
-        # Do the DESCENDING tracks        
-        descending = np.where(np.gradient(lat_sub) < 0.)[0]
-        # If there are any descending tracks
-        if len(descending) > 0.:
-            ssh_sub_desc = ssh_sub[descending[0]:descending[-1]]
-            lat_sub_desc = lat_sub[descending[0]:descending[-1]]
-            lon_sub_desc = lon_sub[descending[0]:descending[-1]]
-            ice_conc_sub_desc = ice_conc_sub[descending[0]:descending[-1]]
-            type_sub_desc = type_sub[descending[0]:descending[-1]]
+        if len(lat_sub) > 3:
+            # Do the DESCENDING tracks        
+            descending = np.where(np.gradient(lat_sub) < 0.)[0]
+            # If there are any descending tracks
+            if len(descending) > 0.:
+                ssh_sub_desc = ssh_sub[descending[0]:descending[-1]]
+                lat_sub_desc = lat_sub[descending[0]:descending[-1]]
+                lon_sub_desc = lon_sub[descending[0]:descending[-1]]
+                ice_conc_sub_desc = ice_conc_sub[descending[0]:descending[-1]]
+                type_sub_desc = type_sub[descending[0]:descending[-1]]
             
-            bad_elements = []
-            for issh in range(len(ssh_sub_desc)):
-                # If the value is greater than 3 std from the mean
-                if np.mean(ssh_sub_desc) - 3*np.std(ssh_sub_desc) > ssh_sub_desc[issh] > np.mean(ssh_sub_desc) + 3*np.std(ssh_sub_desc):
-                    bad_elements.append(issh)
-            for issh in range(len(ssh_sub_desc)-1):
-                # If the gradient between this point and the next point is greater than .5 m
-                if abs(ssh_sub_desc[issh] - ssh_sub_desc[issh + 1]) > .5:
-                    bad_elements.append(issh + 1)
+                bad_elements = []
+                for issh in range(len(ssh_sub_desc)):
+                    # If the value is greater than 3 std from the mean
+                    if np.mean(ssh_sub_desc) - 3*np.std(ssh_sub_desc) > ssh_sub_desc[issh] > np.mean(ssh_sub_desc) + 3*np.std(ssh_sub_desc):
+                        bad_elements.append(issh)
+                for issh in range(len(ssh_sub_desc)-1):
+                    # If the gradient between this point and the next point is greater than .5 m
+                    if abs(ssh_sub_desc[issh] - ssh_sub_desc[issh + 1]) > .5:
+                        bad_elements.append(issh + 1)
             
-            # remove the points that meet the above criteria
-            # In reverse order to avoid index problems
-            for bad in sorted(np.unique(bad_elements), reverse=True):
-                del ssh_sub_desc[bad]
-                del lat_sub_desc[bad]
-                del lon_sub_desc[bad]
-                del ice_conc_sub_desc[bad]
-                del type_sub_desc[bad]
-            lat += lat_sub_desc
-            lon += lon_sub_desc
-            type += type_sub_desc
-            ice_conc += ice_conc_sub_desc
-            # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
-            ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc, 40.))
-    
-        ascending = np.where(np.gradient(lat_sub) > 0.)[0]
-        # If there are any ascending tracks
-        if len(ascending) > 0.:
-            ssh_sub_asc = ssh_sub[ascending[1]:ascending[-1]]
-            lat_sub_asc = lat_sub[ascending[1]:ascending[-1]]
-            lon_sub_asc = lon_sub[ascending[1]:ascending[-1]]
-            ice_conc_sub_asc = ice_conc_sub[ascending[1]:ascending[-1]]
-            type_sub_asc = type_sub[ascending[1]:ascending[-1]]
+                # remove the points that meet the above criteria
+                # In reverse order to avoid index problems
+                for bad in sorted(np.unique(bad_elements), reverse=True):
+                    del ssh_sub_desc[bad]
+                    del lat_sub_desc[bad]
+                    del lon_sub_desc[bad]
+                    del ice_conc_sub_desc[bad]
+                    del type_sub_desc[bad]
+                lat += lat_sub_desc
+                lon += lon_sub_desc
+                type += type_sub_desc
+                ice_conc += ice_conc_sub_desc
+                # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
+                #ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc, 40.))
+                ssh += ssh_sub_desc
         
-            bad_elements = []
-            # Do the Ascending tracks
-            for issh in range(len(ssh_sub_asc)):
-                # If the value is greater than 3 std from the mean
-                if np.mean(ssh_sub_asc) - 3*np.std(ssh_sub_asc) > ssh_sub_asc[issh] > np.mean(ssh_sub_asc) + 3*np.std(ssh_sub_asc):
-                    bad_elements.append(issh)
-            for issh in range(len(ssh_sub_asc)-1):
-                # If the gradient between this point and the next point is greater than .5 m
-                if abs(ssh_sub_asc[issh] - ssh_sub_asc[issh + 1]) > .5:
-                    bad_elements.append(issh + 1)
+            ascending = np.where(np.gradient(lat_sub) > 0.)[0]
+            # If there are any ascending tracks
+            if len(ascending) > 0.:
+                ssh_sub_asc = ssh_sub[ascending[1]:ascending[-1]]
+                lat_sub_asc = lat_sub[ascending[1]:ascending[-1]]
+                lon_sub_asc = lon_sub[ascending[1]:ascending[-1]]
+                ice_conc_sub_asc = ice_conc_sub[ascending[1]:ascending[-1]]
+                type_sub_asc = type_sub[ascending[1]:ascending[-1]]
+        
+                bad_elements = []
+                # Do the Ascending tracks
+                for issh in range(len(ssh_sub_asc)):
+                    # If the value is greater than 3 std from the mean
+                    if np.mean(ssh_sub_asc) - 3*np.std(ssh_sub_asc) > ssh_sub_asc[issh] > np.mean(ssh_sub_asc) + 3*np.std(ssh_sub_asc):
+                        bad_elements.append(issh)
+                for issh in range(len(ssh_sub_asc)-1):
+                    # If the gradient between this point and the next point is greater than .5 m
+                    if abs(ssh_sub_asc[issh] - ssh_sub_asc[issh + 1]) > .5:
+                        bad_elements.append(issh + 1)
                 
-            for bad in sorted(np.unique(bad_elements), reverse=True):
-                del ssh_sub_asc[bad]
-                del lat_sub_asc[bad]
-                del lon_sub_asc[bad]
-                del ice_conc_sub_asc[bad]
-                del type_sub_asc[bad]
-            lat += lat_sub_asc
-            lon += lon_sub_asc
-            type += type_sub_asc
-            ice_conc += ice_conc_sub_asc
-            # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
-            ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc, 40.))
+                for bad in sorted(np.unique(bad_elements), reverse=True):
+                    del ssh_sub_asc[bad]
+                    del lat_sub_asc[bad]
+                    del lon_sub_asc[bad]
+                    del ice_conc_sub_asc[bad]
+                    del type_sub_asc[bad]
+                lat += lat_sub_asc
+                lon += lon_sub_asc
+                type += type_sub_asc
+                ice_conc += ice_conc_sub_asc
+                # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
+                #ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc, 40.))
+                ssh += ssh_sub_asc
 
     return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc, 'type': type}
 
@@ -212,11 +211,11 @@ def grid05(data, lon_data, lat_data, lat_res, lon_res):
     xy_count = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
 
     for i in range(np.size(data)):
-        x_coord = float(decimal.Decimal(float(x_cyl[i])).quantize(decimal.Decimal(str(lon_res)), rounding='ROUND_DOWN')) + 0.5
-        y_coord = float(decimal.Decimal(float(y_cyl[i])).quantize(decimal.Decimal(str(lat_res)), rounding='ROUND_DOWN')) + 0.5
+        x_coord = float(decimal.Decimal(float(x_cyl[i])).quantize(decimal.Decimal(str(lon_res)), rounding='ROUND_DOWN'))
+        y_coord = float(decimal.Decimal(float(y_cyl[i])).quantize(decimal.Decimal(str(lat_res)), rounding='ROUND_DOWN'))
 
-        ix_range = np.where(np.logical_and(x_range >= x_coord - lon_res/2, x_range <= x_coord + lon_res/2))
-        iy_range = np.where(np.logical_and(y_range >= y_coord - lat_res/2, y_range <= y_coord + lat_res/2))
+        ix_range = np.where(np.logical_and(x_range > x_coord - lon_res/2, x_range < x_coord + lon_res/2))
+        iy_range = np.where(np.logical_and(y_range > y_coord - lat_res/2, y_range < y_coord + lat_res/2))
 
         if np.isnan(xy_grid[ix_range, iy_range]):
             xy_grid[ix_range, iy_range] = data[i]
@@ -261,8 +260,8 @@ def grid(data, lon_data, lat_data, res):
         x_coord = float(decimal.Decimal(float(x_cyl[i])).quantize(decimal.Decimal(str(res))))
         y_coord = float(decimal.Decimal(float(y_cyl[i])).quantize(decimal.Decimal(str(res))))
 
-        ix_range = np.where(np.logical_and(x_range >= x_coord - res/2, x_range <= x_coord + res/2))
-        iy_range = np.where(np.logical_and(y_range >= y_coord - res/2, y_range <= y_coord + res/2))
+        ix_range = np.where(np.logical_and(x_range > x_coord - res/2, x_range < x_coord + res/2))
+        iy_range = np.where(np.logical_and(y_range > y_coord - res/2, y_range < y_coord + res/2))
 
         if np.isnan(xy_grid[ix_range, iy_range]):
             xy_grid[ix_range, iy_range] = data[i]

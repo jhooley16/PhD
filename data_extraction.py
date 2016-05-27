@@ -33,17 +33,16 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             m.fillcontinents(zorder=10)
             m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
             m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-        
             stereo_x, stereo_y = m(lon, lat)
             m.scatter(stereo_x, stereo_y, c=ssh, marker='.', edgecolors='none')
             m.colorbar()
             pl.clim(np.mean(ssh) + 3*np.std(ssh), np.mean(ssh) - 3*np.std(ssh))
-            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Raw/'+ year + '/Figures/' + year + month + '.png', 
-                format='png')
+            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Processed/'+ year + '/Figures/' + year + month + '_ssh.png', 
+                format='png', dpi=1200)
             pl.close()
             
-            # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Raw
-            os.chdir('/Users/jmh2g09/Documents/PhD/Data/Raw/' + year)
+            # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Processed
+            os.chdir('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year)
 
             nc = Dataset(year + month + '_raw.nc', 'w', format='NETCDF3_CLASSIC')
 
