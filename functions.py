@@ -3,11 +3,12 @@ import numpy as np
 from mpl_toolkits.basemap import Basemap
 import decimal
 import scipy.ndimage
+from netCDF4 import Dataset
 
 def month_data(directory, lead_offset=0.):
-    """Extract latitude, longitude, sea surface height, and surface ice concentration
-    data from all files in 'directory'.
-    eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'"""
+    """Extract latitude, longitude, sea surface height, surface ice concentration,
+    and surface type data from all files in 'directory'. 
+    Also applies an optional ocean-lead offset (default offset is 0.0 m)."""
     files = os.listdir(directory)
     lat = []
     lon = []
@@ -46,7 +47,7 @@ def month_data(directory, lead_offset=0.):
                         if columns[0] == '2':
                             ssh_sub.append(float(columns[7]) + lead_offset)
                         # If the ssh is from the open ocean, don't apply offset
-                        if columns[0] == '1':
+                        elif columns[0] == '1':
                             ssh_sub.append(float(columns[7]))
                         ice_conc_sub.append(float(columns[11]))
                         type_sub.append(float(columns[0]))
@@ -315,3 +316,66 @@ def ocean_lead_offset(month):
 #October offset:  0.0964708361887
 #November offset:  0.0591056776193
 #December offset:  0.0469972667101
+
+def mode_points(lat, lon, month):
+    '''Function that takes a list of lat and lon points and returns a list 
+    corresponding to the SIRAL retracker mode with which that point was measured. 
+    'month' is a string where '01' corresponds to January, '12' for December.
+    
+    Returns a list of length(lat) where the elements correspond to 
+    Low Resolution Mode (0), SAR mode (1) or SARIn mode (2).'''
+    
+    def in_me(x, y, poly):
+        '''Determine if a point is inside a given polygon or not
+        Polygon is a list of (x,y) pairs.'''
+    
+        n = len(poly)
+        inside = False
+
+        p1x, p1y = poly[0]
+        for i in range(n + 1):
+            p2x,p2y = poly[i % n]
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+
+        return inside
+
+    # Load the polygon data
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Mode Mask/SARIn_polygon.nc', 'r')
+    lat_poly_SARIn = nc.variables['Lat_SARIn'][:]
+    lon_poly_SARIn = nc.variables['Lon_SARIn'][:]
+    nc.close()
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Mode Mask/SAR_polygon.nc', 'r')
+    lat_poly_SAR = nc.variables['Lat_SAR_' + month][:]
+    lon_poly_SAR = nc.variables['Lon_SAR_' + month][:]
+    nc.close()
+
+    # Convert to polar stereographic x and y coordinates
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    # For the SAR data
+    stereo_x_SAR, stereo_y_SAR = m(lon_poly_SAR, lat_poly_SAR)
+    polygon_SAR = list(zip(stereo_x_SAR, stereo_y_SAR))
+    # For the SARIn data
+    stereo_x_SARIn, stereo_y_SARIn = m(lon_poly_SARIn, lat_poly_SARIn)
+    polygon_SARIn = list(zip(stereo_x_SARIn, stereo_y_SARIn))
+    # For the track data
+    stereo_x, stereo_y = m(lon, lat)
+
+    point_type = []
+    for point in list(zip(stereo_x, stereo_y)):
+        point_x = point[0]
+        point_y = point[1]
+        if in_me(point_x, point_y, polygon_SAR) == False and in_me(point_x, point_y, polygon_SARIn) == False:
+            point_type.append(0)
+        elif in_me(point_x, point_y, polygon_SAR) == True and in_me(point_x, point_y, polygon_SARIn) == False:
+            point_type.append(1)
+        elif in_me(point_x, point_y, polygon_SAR) == True and in_me(point_x, point_y, polygon_SARIn) == True:
+            point_type.append(2)
+    
+    return point_type
