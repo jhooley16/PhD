@@ -5,7 +5,9 @@ import numpy as np
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
-for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
+geoid = input('What Geoid? (EGM2008 or GOCO05s): ')
+
+for year in ['2010']:#, '2011', '2012', '2013', '2014', '2015', '2016']:
 
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
 
@@ -15,7 +17,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             print(month, year)
 
-            data = funct.month_data(directory, lead_offset=funct.ocean_lead_offset(month))
+            data = funct.month_data(directory)
     
             lat = data['lat']
             lon = data['lon']
@@ -23,6 +25,8 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             ice_conc = data['ice_conc']
             surface_type = data['type']
             print('Data Extracted')
+            
+            ####retracker_mode = funct.mode_points(lat, lon, month)
             
             # Make a plot of the data for each month
             pl.figure()
@@ -52,6 +56,8 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             longitudes = nc.createVariable('lon', float, ('station',))
             sea_surface_height = nc.createVariable('sea_surface_height', float, ('station',))
             surface = nc.createVariable('surface_type', 'i', ('station',))
+            sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
+
             crs = nc.createVariable('crs', 'i', ())
     
             latitudes.long_name = 'latitude'
@@ -60,7 +66,10 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             longitudes.long_name = 'longitude'
             longitudes.standard_name = 'longitude'
             longitudes.units = 'degrees_east'
-    
+            sea_ice_concentration.standard_name = 'sea_ice_concentration'
+            sea_ice_concentration.long_name = 'sea_ice_concentration'
+            sea_ice_concentration.units = '%'
+            sea_ice_concentration.grid_mapping = 'crs'
             sea_surface_height.standard_name = 'sea_surface_height_above_reference_ellipsoid'
             sea_surface_height.long_name = 'sea_surface_height'
             sea_surface_height.units = 'm'
@@ -77,59 +86,41 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             longitudes[:] = lon
             sea_surface_height[:] = ssh
             surface[:] = surface_type
-    
-            nc.close()
-    
-            # Create .nc file for the sea ice concentration data
-            nc = Dataset(year + month + '_icetrack.nc', 'w', format='NETCDF3_CLASSIC')
-            nc.createDimension('station', np.size(lat))
-            latitudes = nc.createVariable('lat', float, ('station',))
-            longitudes = nc.createVariable('lon', float, ('station',))
-            sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
-    
-            latitudes.long_name = 'latitude'
-            latitudes.standard_name = 'latitude'
-            latitudes.units = 'degrees_north'
-            longitudes.long_name = 'longitude'
-            longitudes.standard_name = 'longitude'
-            longitudes.units = 'degrees_east'
-        
-            sea_ice_concentration.standard_name = 'sea_ice_concentration'
-            sea_ice_concentration.long_name = 'sea_ice_concentration'
-            sea_ice_concentration.units = '%'
-            sea_ice_concentration.grid_mapping = 'crs'
-
-            latitudes[:] = lat
-            longitudes[:] = lon
             sea_ice_concentration[:] = ice_conc
     
             nc.close()
-    
-            # In order for the track file to be used with GUT, it needs to be in 
-            # netCDF3_classic format.
-            nc = Dataset(year + month + '_track.nc', 'w', format='NETCDF3_CLASSIC')
-
-            nc.createDimension('station', np.size(lat))
-
-            longitudes = nc.createVariable('lon', float, ('station',))
-            latitudes = nc.createVariable('lat', float, ('station',))
-            crs = nc.createVariable('crs', 'i', ())
-
-            latitudes.long_name = 'latitude'
-            latitudes.standard_name = 'latitude'
-            latitudes.units = 'degrees_north'
-            longitudes.long_name = 'longitude'
-            longitudes.standard_name = 'longitude'
-            longitudes.units = 'degrees_east'
-            crs.semi_major_axis = 6378137.
-            crs.inverse_flattening = 298.257222101004
-            crs.earth_gravity_constant = 398600500000000.
-            crs.earth_rotation_rate = 7.292115e-05
-
-            latitudes[:] = lat
-            longitudes[:] = lon
-
-            nc.close()
-            print('Generating geoid file')
-            os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack '
-            + year + month + '_track.nc -OutFile ' + year + month + '_geoid_track.nc')
+#            
+#            if geoid == 'GOCO05s':
+#                # In order for the track file to be used with GUT, it needs to be in 
+#                # netCDF3_classic format.
+#                nc = Dataset('../track.nc', 'w', format='NETCDF3_CLASSIC')#
+#
+#                nc.createDimension('station', np.size(lat))#
+#
+#                longitudes = nc.createVariable('lon', float, ('station',))
+#                latitudes = nc.createVariable('lat', float, ('station',))
+#                crs = nc.createVariable('crs', 'i', ())#
+#
+#                latitudes.long_name = 'latitude'
+#                latitudes.standard_name = 'latitude'
+#                latitudes.units = 'degrees_north'
+#                longitudes.long_name = 'longitude'
+#                longitudes.standard_name = 'longitude'
+#                longitudes.units = 'degrees_east'
+#                crs.semi_major_axis = 6378137.
+#                crs.inverse_flattening = 298.257222101004
+#                crs.earth_gravity_constant = 398600500000000.
+#                crs.earth_rotation_rate = 7.292115e-05
+#    
+#                latitudes[:] = lat
+#                longitudes[:] = lon#
+#
+ #               nc.close()
+#                print('Generating geoid file')
+#                os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack ../track.nc -OutFile ' + year + month + '_geoid_track.nc')
+#            
+#            elif geoid == 'EGM2008':
+#                with open('/Users/jmh2g09/Documents/PhD/Geoid/EGM2008/track.dat', 'w') as f:
+#                    for f1, f2 in zip(lat, lon):
+ #                       print(f1, f2, file=f)
+#                
