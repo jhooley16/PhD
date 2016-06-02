@@ -5,7 +5,7 @@ import decimal
 import scipy.ndimage
 from netCDF4 import Dataset
 
-def month_data(directory, lead_offset=0.):
+def month_data(directory, month):
     """Extract latitude, longitude, sea surface height, surface ice concentration,
     and surface type data from all files in 'directory'. 
     Also applies an optional ocean-lead offset (default offset is 0.0 m)."""
@@ -43,12 +43,18 @@ def month_data(directory, lead_offset=0.):
                     if float(columns[7]) - float(columns[8]) <= 3.:
                         lat_sub.append(float(columns[5]))
                         lon_sub.append(float(columns[6]))
-                        # If the ssh is from a lead, apply the offset
-                        if columns[0] == '2':
-                            ssh_sub.append(float(columns[7]) + lead_offset)
-                        # If the ssh is from the open ocean, don't apply offset
-                        elif columns[0] == '1':
+                        # If the point was taken using LRM
+                        if mode_points(float(columns[5]), float(columns[6]), month) = 0:
+                            print('LRM')
                             ssh_sub.append(float(columns[7]))
+                        # If the point was taken using SAR
+                        elif mode_points(float(columns[5]), float(columns[6]), month) = 1:
+                            print('SAR')
+                            ssh_sub.append(float(columns[7]) + mode_offset(month, 'SAR'))
+                        # If the point was taken using SARIn
+                        elif mode_points(float(columns[5]), float(columns[6]), month) = 2:
+                            print('SARIn')
+                            ssh_sub.append(float(columns[7]) + mode_offset(month, 'SAR') + mode_offset(month, 'SARIn'))
                         ice_conc_sub.append(float(columns[11]))
                         type_sub.append(float(columns[0]))
         f.close()
@@ -279,31 +285,57 @@ def grid(data, lon_data, lat_data, res):
 
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
 
-def ocean_lead_offset(month):
-    if month == '01':
-        return 0.053
-    if month == '02':
-        return 0.042
-    if month == '03':
-        return 0.044
-    if month == '04':
-        return 0.059
-    if month == '05':
-        return 0.062
-    if month == '06':
-        return 0.089
-    if month == '07':
-        return 0.108
-    if month == '08':
-        return 0.105
-    if month == '09':
-        return 0.092
-    if month == '10':
-        return 0.096
-    if month == '11':
-        return 0.059
-    if month == '12':
-        return 0.047
+def mode_offset(month, boundary):
+    if boundary == 'SAR':
+        if month == '01':
+            return 0.0
+        elif month == '02':
+            return 0.0
+        elif month == '03':
+            return 0.0
+        elif month == '04':
+            return 0.0
+        elif month == '05':
+            return 0.0
+        elif month == '06':
+            return 0.0
+        elif month == '07':
+            return 0.0
+        elif month == '08':
+            return 0.0
+        elif month == '09':
+            return 0.0
+        elif month == '10':
+            return 0.0
+        elif month == '11':
+            return 0.0
+        elif month == '12':
+            return 0.0
+    if boundary == 'SARIn':
+        if month == '01':
+            return 0.0
+        elif month == '02':
+            return 0.0
+        elif month == '03':
+            return 0.0
+        elif month == '04':
+            return 0.0
+        elif month == '05':
+            return 0.0
+        elif month == '06':
+            return 0.0
+        elif month == '07':
+            return 0.0
+        elif month == '08':
+            return 0.0
+        elif month == '09':
+            return 0.0
+        elif month == '10':
+            return 0.0
+        elif month == '11':
+            return 0.0
+        elif month == '12':
+            return 0.0
 #January offset:  0.0532795957319
 #Febuary offset:  0.0424895753339
 #March offset:  0.044196774024
