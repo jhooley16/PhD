@@ -6,8 +6,8 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
 year = input('What Year? (xxxx): ')
-lat_resolution = input('What latitude resolution?: ')
-lon_resolution = input ('What longitude resolution?: ')
+lat_resolution = '0.5'    #input('What latitude resolution?: ')
+lon_resolution = '1.0'      #input ('What longitude resolution?: ')
 
 # Look at the raw data files
 os.chdir('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/DOT_track')
@@ -18,22 +18,29 @@ for file in os.listdir():
         print('Gridding: ' + file)
         nc = Dataset(file, 'r')
     
-        lat = nc.variables['lat'][:]
-        lon = nc.variables['lon'][:]
+        lat = nc.variables['latitude'][:]
+        lon = nc.variables['longitude'][:]
         dot = nc.variables['dynamic_ocean_topography'][:]
         ice_conc = nc.variables['sea_ice_concentration'][:]
     
         nc.close()
     
-        # Grid dynamic ocean topography to a 0.5-degree grid
+        # Grid dynamic ocean topography to a 1x0.5-degree grid
         # grid05(data, lon, lat, lat_resolution, lon_resolution)
         data = funct.grid05(dot, lon, lat, float(lat_resolution), float(lon_resolution))
         grid_dot = data['Grid']
         grid_lon = data['Lon']
         grid_lat = data['Lat']
         
-        data = funct.grid05(ice_conc, lon, lat,float(lat_resolution), float(lon_resolution))
+        data = funct.grid05(ice_conc, lon, lat, float(lat_resolution), float(lon_resolution))
         grid_ice = data['Grid']
+
+        # Make the longitudes between 0 and 360
+        grid_lon[grid_lon < 0] += 361
+        
+        grid_dot = grid_dot[np.argsort(grid_lon), :]
+        grid_ice = grid_ice[np.argsort(grid_lon), :]
+        grid_lon = grid_lon[np.argsort(grid_lon)]
 
         month = file[4:6]
         pl.figure()
@@ -48,25 +55,25 @@ for file in os.listdir():
         grid_lats, grid_lons = np.meshgrid(grid_lat, grid_lon)
         stereo_x, stereo_y = m(grid_lons, grid_lats)
         
-        m.pcolor(stereo_x, stereo_y, grid_dot)
+        m.pcolor(stereo_x, stereo_y, np.ma.masked_invalid(grid_dot))
         m.colorbar()
-        pl.clim(np.mean(grid_dot) + 3*np.std(grid_dot), np.mean(grid_dot) - 3*np.std(grid_dot))
-        m.contour(stereo_x, stereo_y, grid_ice, [60,])
+        pl.clim(np.mean(np.ma.masked_invalid(grid_dot)) + 3*np.std(np.ma.masked_invalid(grid_dot)), np.mean(np.ma.masked_invalid(grid_dot)) - 3*np.std(np.ma.masked_invalid(grid_dot)))
+        m.contour(stereo_x, stereo_y, np.ma.masked_invalid(grid_ice), [60,])
         pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/'+ year +'/DOT/Figures/' 
             + year + month + '_DOT_gridded_' + lon_resolution + 'x' 
-            + lat_resolution + '.png', format='png', dpi=1200)
+            + lat_resolution + '.png', format='png', transparent=True, dpi=300)
         pl.close()
     
         # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded     
-        nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + year + '/DOT' + year + month + '_DOT.nc', 'w', format='NETCDF4_CLASSIC')
+        nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + year + '/DOT/' + year + month + '_DOT.nc', 'w')
 
         nc.createDimension('lat', np.size(grid_lat))
         nc.createDimension('lon', np.size(grid_lon))
 
-        latitudes = nc.createVariable('Latitude', float, ('lat',))
-        longitudes = nc.createVariable('Longitude', float, ('lon',))
-        gridded_dot = nc.createVariable('dynamic_ocean_topography', float, ('lon','lat'))
-        gridded_ice = nc.createVariable('sea_ice_concentration', float, ('lon','lat'))
+        latitudes = nc.createVariable('latitude', float, ('lat',))
+        longitudes = nc.createVariable('longitude', float, ('lon',))
+        gridded_dot = nc.createVariable('dynamic_ocean_topography', float, ('lat','lon'))
+        gridded_ice = nc.createVariable('sea_ice_concentration', float, ('lat','lon'))
 
         latitudes.long_name = 'latitude'
         latitudes.standard_name = 'latitude'
@@ -83,8 +90,8 @@ for file in os.listdir():
 
         latitudes[:] = grid_lat
         longitudes[:] = grid_lon
-        gridded_dot[:] = grid_dot
-        gridded_ice[:] = grid_ice
+        gridded_dot[:] = np.transpose(grid_dot)
+        gridded_ice[:] = np.transpose(grid_ice)
 
         nc.close()
         print('Complete!')
