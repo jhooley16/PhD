@@ -6,6 +6,18 @@ import matplotlib.pyplot as pl
 average_circumpolar_offset_SAR = np.zeros(12)
 average_circumpolar_offset_SARIn = np.zeros(12)
 
+WEDD_timeseries_SAR = []
+IND_timeseries_SAR = []
+ROSS_timeseries_SAR = []
+AMBEL_timeseries_SAR = []
+timeseries_SAR = []
+WEDD_timeseries_SARIn = []
+IND_timeseries_SARIn = []
+ROSS_timeseries_SARIn = []
+AMBEL_timeseries_SARIn = []
+timeseries_SARIn = []
+
+
 for year in ['2011', '2012', '2013', '2014', '2015']:
     print(year)
     
@@ -34,7 +46,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     month_number = []
 
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-
+        print(month)
         offset_WEDD_SAR = []
         offset_IND_SAR = []
         offset_ROSS_SAR = []
@@ -53,11 +65,13 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
             for file in os.listdir():
                 
                 # 200 points equals the decorrelation scale (50 km) 
-                SAR_edge = [0] * 50 + [1] * 50
-                SAR_edge2 = [1] * 50 + [0] * 50
-                SARIn_edge = [1] * 50 + [2] * 50
-                SARIn_edge2 = [2] * 50 + [1] * 50
-
+                SAR_edge = [0] * 200 + [1] * 200
+                SAR_edge2 = [1] * 200 + [0] * 200
+                SARIn_edge = [1] * 200 + [2] * 200
+                SARIn_edge2 = [2] * 200 + [1] * 200
+                Len_SAR = len(SAR_edge)
+                Len_SARIn = len(SARIn_edge)                
+                
                 ssha = []
                 lon = []
                 lat = []
@@ -81,131 +95,135 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
                 iedge_SAR = []
                 iedge_SARIn = []
                 for it in range(len(surface_type)):
-                    if surface_type[it:it + len(SAR_edge)] == SAR_edge:
-                        iedge_SAR.append(it + len(SAR_edge)//2)
-                    elif surface_type[it:it + len(SAR_edge)] == SAR_edge2:
-                        iedge_SAR.append(it + len(SAR_edge)//2)
+                    if surface_type[it:it + Len_SAR] == SAR_edge:
+                        iedge_SAR.append(it + Len_SAR//2)
+                    elif surface_type[it:it + Len_SAR] == SAR_edge2:
+                        iedge_SAR.append(it + Len_SAR//2)
 
-                    elif surface_type[it:it + len(SARIn_edge)] == SARIn_edge:
-                        iedge_SARIn.append(it + len(SARIn_edge)//2)
-                    elif surface_type[it:it + len(SARIn_edge)] == SARIn_edge2:
-                        iedge_SARIn.append(it + len(SARIn_edge)//2)
+                    elif surface_type[it:it + Len_SARIn] == SARIn_edge:
+                        iedge_SARIn.append(it + Len_SARIn//2)
+                    elif surface_type[it:it + Len_SARIn] == SARIn_edge2:
+                        iedge_SARIn.append(it + Len_SARIn//2)
 
                 for step in iedge_SAR:
-                    if surface_type[step - len(SAR_edge)//2:step] == [0] * (len(SAR_edge)//2):
+                    if surface_type[step - Len_SAR//2:step] == [0] * (Len_SAR//2):
                         # LRM to SAR step
-                        if abs(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2])) < .5:
-                            # # Calculate circumpolar offset
-                            circum_offset_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                            hist_offset_circum_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                            # Choose what the sector the offset point lies within
-                            if -60. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= 0.:
-                                #print('Weddell')
-                                offset_WEDD_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                                hist_offset_WEDD_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                            elif 0 <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= 160.:
-                                #print('Indian')
-                                offset_IND_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                                hist_offset_IND_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                            elif 160. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= 180.:
-                                #print('Ross')
-                                offset_ROSS_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                                hist_offset_ROSS_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                            elif -180. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= -130.:
-                                #print('Ross')
-                                offset_ROSS_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                                hist_offset_ROSS_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                            elif -130. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= -60.:
-                                #print('Amundsen-Bellingshausen')
-                                offset_AMBEL_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
-                                hist_offset_AMBEL_SAR.append(np.mean(ssha[step - len(SAR_edge)//2:step]) - np.mean(ssha[step:step + len(SAR_edge)//2]))
+                        if np.max(abs(np.gradient(lat[step - Len_SAR//2:step + Len_SAR//2]))) < 0.05:
+                            if abs(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2])) < .3:
+                                # # Calculate circumpolar offset
+                                circum_offset_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                hist_offset_circum_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                # Choose what the sector the offset point lies within
+                                if -60. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= 0.:
+                                    #print('Weddell')
+                                    offset_WEDD_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                    hist_offset_WEDD_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                elif 0 <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= 160.:
+                                    #print('Indian')
+                                    offset_IND_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                    hist_offset_IND_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                elif 160. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= 180.:
+                                    #print('Ross')
+                                    offset_ROSS_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                    hist_offset_ROSS_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                elif -180. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= -130.:
+                                    #print('Ross')
+                                    offset_ROSS_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                    hist_offset_ROSS_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                elif -130. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= -60.:
+                                    #print('Amundsen-Bellingshausen')
+                                    offset_AMBEL_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
+                                    hist_offset_AMBEL_SAR.append(np.mean(ssha[step - Len_SAR//2:step]) - np.mean(ssha[step:step + Len_SAR//2]))
 
 
-                    if surface_type[step - len(SAR_edge)//2:step] == [1] * (len(SAR_edge)//2):
+                    if surface_type[step - Len_SAR//2:step] == [1] * (Len_SAR//2):
                         # SAR to LRM step
-                        if abs(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step])) < .5:
-                            # Calculate circumpolar offset
-                            circum_offset_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                            hist_offset_circum_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                            # Choose what the sector the offset point lies within
-                            if -60. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= 0.:
-                                #print('Weddell')
-                                offset_WEDD_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                                hist_offset_WEDD_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                            elif 0 <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= 160.:
-                                #print('Indian')
-                                offset_IND_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                                hist_offset_IND_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                            elif 160. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= 180.:
-                                #print('Ross')
-                                offset_ROSS_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                                hist_offset_ROSS_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                            elif -180. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= -130.:
-                                #print('Ross')
-                                offset_ROSS_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                                hist_offset_ROSS_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                            elif -130. <= np.mean(lon[step - len(SAR_edge)//2:step + len(SAR_edge)//2]) <= -60.:
-                                #print('Amundsen-Bellingshausen')
-                                offset_AMBEL_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
-                                hist_offset_AMBEL_SAR.append(np.mean(ssha[step:step + len(SAR_edge)//2]) - np.mean(ssha[step - len(SAR_edge)//2:step]))
+                        if np.max(abs(np.gradient(lat[step - Len_SAR//2:step + Len_SAR//2]))) < 0.05:
+                            if abs(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step])) < .3:
+                                # Calculate circumpolar offset
+                                circum_offset_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                hist_offset_circum_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                # Choose what the sector the offset point lies within
+                                if -60. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= 0.:
+                                    #print('Weddell')
+                                    offset_WEDD_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                    hist_offset_WEDD_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                elif 0 <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= 160.:
+                                    #print('Indian')
+                                    offset_IND_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                    hist_offset_IND_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                elif 160. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= 180.:
+                                    #print('Ross')
+                                    offset_ROSS_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                    hist_offset_ROSS_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                elif -180. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= -130.:
+                                    #print('Ross')
+                                    offset_ROSS_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                    hist_offset_ROSS_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                elif -130. <= np.mean(lon[step - Len_SAR//2:step + Len_SAR//2]) <= -60.:
+                                    #print('Amundsen-Bellingshausen')
+                                    offset_AMBEL_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
+                                    hist_offset_AMBEL_SAR.append(np.mean(ssha[step:step + Len_SAR//2]) - np.mean(ssha[step - Len_SAR//2:step]))
 
                 for step in iedge_SARIn:
-                    if surface_type[step - len(SAR_edge)//2:step] == [1] * (len(SAR_edge)//2):
-                        # LRM to SAR step
-                        if abs(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2])) < .5:
-                            # # Calculate circumpolar offset
-                            circum_offset_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                            hist_offset_circum_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                            # Choose what the sector the offset point lies within
-                            if -60. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= 0.:
-                                #print('Weddell')
-                                offset_WEDD_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                                hist_offset_WEDD_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                            elif 0 <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= 160.:
-                                #print('Indian')
-                                offset_IND_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                                hist_offset_IND_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                            elif 160. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= 180.:
-                                #print('Ross')
-                                offset_ROSS_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                                hist_offset_ROSS_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                            elif -180. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= -130.:
-                                #print('Ross')
-                                offset_ROSS_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                                hist_offset_ROSS_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                            elif -130. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= -60.:
-                                #print('Amundsen-Bellingshausen')
-                                offset_AMBEL_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
-                                hist_offset_AMBEL_SARIn.append(np.mean(ssha[step - len(SARIn_edge)//2:step]) - np.mean(ssha[step:step + len(SARIn_edge)//2]))
+                    if surface_type[step - Len_SARIn//2:step] == [1] * (Len_SARIn//2):
+                        if np.max(abs(np.gradient(lat[step - Len_SARIn//2:step + Len_SARIn//2]))) < 0.05:
+                            # SAR to SARIn step
+                            if abs(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2])) < .3:
+                                # # Calculate circumpolar offset
+                                circum_offset_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                hist_offset_circum_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                # Choose what the sector the offset point lies within
+                                if -60. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= 0.:
+                                    #print('Weddell')
+                                    offset_WEDD_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                    hist_offset_WEDD_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                elif 0 <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= 160.:
+                                    #print('Indian')
+                                    offset_IND_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                    hist_offset_IND_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                elif 160. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= 180.:
+                                    #print('Ross')
+                                    offset_ROSS_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                    hist_offset_ROSS_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                elif -180. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= -130.:
+                                    #print('Ross')
+                                    offset_ROSS_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                    hist_offset_ROSS_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                elif -130. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= -60.:
+                                    #print('Amundsen-Bellingshausen')
+                                    offset_AMBEL_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
+                                    hist_offset_AMBEL_SARIn.append(np.mean(ssha[step - Len_SARIn//2:step]) - np.mean(ssha[step:step + Len_SARIn//2]))
 
 
-                    if surface_type[step - len(SARIn_edge)//2:step] == [2] * (len(SARIn_edge)//2):
-                        # SARIn to SAR step
-                        if abs(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step])) < .5:
-                            # Calculate circumpolar offset
-                            circum_offset_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                            hist_offset_circum_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                            # Choose what the sector the offset point lies within
-                            if -60. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= 0.:
-                                #print('Weddell')
-                                offset_WEDD_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                                hist_offset_WEDD_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                            elif 0 <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= 160.:
-                                #print('Indian')
-                                offset_IND_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                                hist_offset_IND_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                            elif 160. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= 180.:
-                                #print('Ross')
-                                offset_ROSS_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                                hist_offset_ROSS_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                            elif -180. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= -130.:
-                                #print('Ross')
-                                offset_ROSS_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                                hist_offset_ROSS_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                            elif -130. <= np.mean(lon[step - len(SARIn_edge)//2:step + len(SARIn_edge)//2]) <= -60.:
-                                #print('Amundsen-Bellingshausen')
-                                offset_AMBEL_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
-                                hist_offset_AMBEL_SARIn.append(np.mean(ssha[step:step + len(SARIn_edge)//2]) - np.mean(ssha[step - len(SARIn_edge)//2:step]))
+                    if surface_type[step - Len_SARIn//2:step] == [2] * (Len_SARIn//2):
+                        if np.max(abs(np.gradient(lat[step - Len_SARIn//2:step + Len_SARIn//2]))) < 0.05:
+                            # SARIn to SAR step
+                            if abs(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step])) < .3:
+                                # Calculate circumpolar offset
+                                circum_offset_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                hist_offset_circum_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                # Choose what the sector the offset point lies within
+                                if -60. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= 0.:
+                                    #print('Weddell')
+                                    offset_WEDD_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                    hist_offset_WEDD_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                elif 0 <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= 160.:
+                                    #print('Indian')
+                                    offset_IND_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                    hist_offset_IND_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                elif 160. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= 180.:
+                                    #print('Ross')
+                                    offset_ROSS_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                    hist_offset_ROSS_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                elif -180. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= -130.:
+                                    #print('Ross')
+                                    offset_ROSS_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                    hist_offset_ROSS_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                elif -130. <= np.mean(lon[step - Len_SARIn//2:step + Len_SARIn//2]) <= -60.:
+                                    #print('Amundsen-Bellingshausen')
+                                    offset_AMBEL_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
+                                    hist_offset_AMBEL_SARIn.append(np.mean(ssha[step:step + Len_SARIn//2]) - np.mean(ssha[step - Len_SARIn//2:step]))
 
             monthly_offset_WEDD_SAR.append(np.mean(offset_WEDD_SAR))
             monthly_offset_IND_SAR.append(np.mean(offset_IND_SAR))
@@ -219,13 +237,24 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
             monthly_offset_AMBEL_SARIn.append(np.mean(offset_AMBEL_SARIn))
             monthly_offset_SARIn.append(np.mean(circum_offset_SARIn))
 
+            WEDD_timeseries_SAR.append(np.mean(offset_WEDD_SAR))
+            IND_timeseries_SAR.append(np.mean(offset_IND_SAR))
+            ROSS_timeseries_SAR.append(np.mean(offset_ROSS_SAR)) 
+            AMBEL_timeseries_SAR.append(np.mean(offset_AMBEL_SAR))
+            timeseries_SAR.append(np.mean(circum_offset_SAR))
+            WEDD_timeseries_SARIn.append(np.mean(offset_WEDD_SARIn))
+            IND_timeseries_SARIn.append(np.mean(offset_IND_SARIn))
+            ROSS_timeseries_SARIn.append(np.mean(offset_ROSS_SARIn))  
+            AMBEL_timeseries_SARIn.append(np.mean(offset_AMBEL_SARIn))
+            timeseries_SARIn.append(np.mean(circum_offset_SARIn))
+    
     pl.figure()
     pl.hist([hist_offset_WEDD_SAR, hist_offset_IND_SAR, hist_offset_ROSS_SAR, hist_offset_AMBEL_SAR], label=['Weddell', 'Indian', 'Ross', 'Amundsen-Bellingshausen'])
     pl.legend()
     pl.title(year + ' LRM - SAR histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Quality Control/' + yr + '_LRMSAR_offset_hist.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_LRMSAR_offset_hist.png', format='png')
     pl.close()
 
     pl.figure()
@@ -234,40 +263,71 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.title(year + ' SAR - SARIn histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Quality Control/' + year + '_SARSARIn_offset_hist.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_SARSARIn_offset_hist.png', format='png')
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
     pl.figure()
-    pl.plot(A, monthly_offset_SAR, label='Circumpolar')
-    pl.plot(A, monthly_offset_WEDD_SAR, label='Weddell')
-    pl.plot(A, monthly_offset_IND_SAR, label='Indian')
-    pl.plot(A, monthly_offset_ROSS_SAR, label='Ross')
-    pl.plot(A, monthly_offset_AMBEL_SAR, label='Amundsen-Bellingshausen')
+    pl.plot(A, monthly_offset_SAR, label='Circumpolar', marker='.')
+    pl.plot(A, monthly_offset_WEDD_SAR, label='Weddell', marker='.')
+    pl.plot(A, monthly_offset_IND_SAR, label='Indian', marker='.')
+    pl.plot(A, monthly_offset_ROSS_SAR, label='Ross', marker='.')
+    pl.plot(A, monthly_offset_AMBEL_SAR, label='Amundsen-Bellingshausen', marker='.')
     pl.legend(loc='lower right')
     pl.title(year + ' monthly offset LRM - SAR (m)')
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Quality Control/' + year + '_monthly_LRMSAR_offset_sectors.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_monthly_LRMSAR_offset_sectors.png', format='png')
     pl.close()
     
     pl.figure()
-    pl.plot(A, monthly_offset_SARIn, label='Circumpolar')
-    pl.plot(A, monthly_offset_WEDD_SARIn, label='Weddell')
-    pl.plot(A, monthly_offset_IND_SARIn, label='Indian')
-    pl.plot(A, monthly_offset_ROSS_SARIn, label='Ross')
-    pl.plot(A, monthly_offset_AMBEL_SARIn, label='Amundsen-Bellingshausen')
+    pl.plot(A, monthly_offset_SARIn, label='Circumpolar', marker='.')
+    pl.plot(A, monthly_offset_WEDD_SARIn, label='Weddell', marker='.')
+    pl.plot(A, monthly_offset_IND_SARIn, label='Indian', marker='.')
+    pl.plot(A, monthly_offset_ROSS_SARIn, label='Ross', marker='.')
+    pl.plot(A, monthly_offset_AMBEL_SARIn, label='Amundsen-Bellingshausen', marker='.')
     pl.legend(loc='lower right')
     pl.title(year + ' monthly offset SAR - SARIn (m)')
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Quality Control/' + year + '_monthly_SARSARIn_offset_sectors.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_monthly_SARSARIn_offset_sectors.png', format='png')
     pl.close()
-
+    
     average_circumpolar_offset_SAR += np.array(monthly_offset_SAR)
     average_circumpolar_offset_SARIn += np.array(monthly_offset_SARIn)
+
+f=open('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/SAR_timeseries.txt', 'w')
+print(WEDD_timeseries_SAR, IND_timeseries_SAR, ROSS_timeseries_SAR, AMBEL_timeseries_SAR, timeseries_SAR, file=f)
+f.close()
+f=open('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/SARIn_timeseries.txt', 'w')
+print(WEDD_timeseries_SARIn, IND_timeseries_SARIn, ROSS_timeseries_SARIn, AMBEL_timeseries_SARIn, timeseries_SARIn, file=f)
+f.close()
+
+pl.figure()
+pl.plot(timeseries_SAR, label='Circumpolar', marker='.')
+pl.plot(WEDD_timeseries_SAR, label='Weddell', marker='.')
+pl.plot(IND_timeseries_SAR, label='Indian', marker='.')
+pl.plot(ROSS_timeseries_SAR, label='Ross', marker='.')
+pl.plot(AMBEL_timeseries_SAR, label='Amundsen-Bellingshausen', marker='.')
+pl.title('LRM - SAR (m) offset timeseries')
+pl.xlabel('Month (from Jan 2011)')
+pl.ylabel('LRM - SAR (m) offset')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/LRMSAR_timeseries.png', format='png')
+pl.close()
+
+pl.figure()
+pl.plot(timeseries_SARIn, label='Circumpolar', marker='.')
+pl.plot(WEDD_timeseries_SARIn, label='Weddell', marker='.')
+pl.plot(IND_timeseries_SARIn, label='Indian', marker='.')
+pl.plot(ROSS_timeseries_SARIn, label='Ross', marker='.')
+pl.plot(AMBEL_timeseries_SARIn, label='Amundsen-Bellingshausen', marker='.')
+pl.title('SAR - SARIn (m) offset timeseries', marker='.')
+pl.xlabel('Month (from Jan 2011)')
+pl.ylabel('SAR - SARIn (m) offset')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/SARSARIn_timeseries.png', format='png')
+pl.close()
 
 average_circumpolar_offset_SAR /= 5
 average_circumpolar_offset_SARIn /= 5
@@ -301,16 +361,28 @@ print('October SAR-SARIn offset: ', average_circumpolar_offset_SARIn[9])
 print('November SAR-SARIn offset: ', average_circumpolar_offset_SARIn[10])
 print('December SAR-SARIn offset: ', average_circumpolar_offset_SARIn[11])
 
-#January offset:  0.0532795957319
-#Febuary offset:  0.0424895753339
-#March offset:  0.044196774024
-#April offset:  0.058855642473
-#May offset:  0.0623327136638
-#June offset:  0.0885369699514
-#July offset:  0.108297693989
-#August offset:  0.104956289149
-#September offset:  0.0924955874413
-#October offset:  0.0964708361887
-#November offset:  0.0591056776193
-#December offset:  0.0469972667101
+#January LRM-SAR offset:  0.00605720510952
+#Febuary LRM-SAR offset:  0.0077402495848
+#March LRM-SAR offset:  -0.00528115908118
+#April LRM-SAR offset:  -0.0122375772566
+#May LRM-SAR offset:  -0.004982935448
+#June LRM-SAR offset:  -0.0157234755177
+#July LRM-SAR offset:  -0.0179909306721
+#August LRM-SAR offset:  -0.0129872770328
+#September LRM-SAR offset:  -0.0123001013372
+#October LRM-SAR offset:  -0.0102008805335
+#November LRM-SAR offset:  0.00215810350424
+#December LRM-SAR offset:  0.0109285059187
+#January SAR-SARIn offset:  -0.0010534507906
+#Febuary SAR-SARIn offset:  -0.00611335649884
+#March SAR-SARIn offset:  -0.00755736513066
+#April SAR-SARIn offset:  -0.00960064774106
+#May SAR-SARIn offset:  -0.00895712247207
+#June SAR-SARIn offset:  -0.00773984717228
+#July SAR-SARIn offset:  -0.00492843462298
+#August SAR-SARIn offset:  -0.00431128796423
+#September SAR-SARIn offset:  -0.00282061906754
+#October SAR-SARIn offset:  -0.00117488669705
+#November SAR-SARIn offset:  -0.00406919339594
+#December SAR-SARIn offset:  -0.0011911462509
 
