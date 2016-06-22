@@ -7,8 +7,8 @@ from netCDF4 import Dataset
 
 def month_data(directory, month):
     """Extract latitude, longitude, sea surface height, surface ice concentration,
-    and surface type data from all files in 'directory'. 
-    Also applies an optional ocean-lead offset (default offset is 0.0 m)."""
+    and surface type data from all files in 'directory'.
+    Also applies a retracker offset. See code for details."""
     files = os.listdir(directory)
     lat = []
     lon = []
@@ -43,20 +43,21 @@ def month_data(directory, month):
                     if float(columns[7]) - float(columns[8]) <= 3.:
                         lat_sub.append(float(columns[5]))
                         lon_sub.append(float(columns[6]))
-                        # If the point was taken using LRM
-                        if mode_points(float(columns[5]), float(columns[6]), month) = 0:
-                            print('LRM')
-                            ssh_sub.append(float(columns[7]))
-                        # If the point was taken using SAR
-                        elif mode_points(float(columns[5]), float(columns[6]), month) = 1:
-                            print('SAR')
-                            ssh_sub.append(float(columns[7]) + mode_offset(month, 'SAR'))
-                        # If the point was taken using SARIn
-                        elif mode_points(float(columns[5]), float(columns[6]), month) = 2:
-                            print('SARIn')
-                            ssh_sub.append(float(columns[7]) + mode_offset(month, 'SAR') + mode_offset(month, 'SARIn'))
+                        ssh_sub.append(float(columns[7]))
                         ice_conc_sub.append(float(columns[11]))
                         type_sub.append(float(columns[0]))
+        
+        # Identify the surface and tracker and apply the necessary offset
+        # Generate a list of the retracker used at each point
+        mode = mode_points(lat_sub, lon_sub, month)
+        for point in range(len(mode)):
+            # If the point is SAR and Ocean
+            if mode[point] == 1 and type_sub[point] == 1:
+                ssh_sub[point] += apply_offset(month, 'SAR_ocean')
+            # If the point is SAR or SARIn and Lead
+            elif (mode[point] == 1 or mode[point] == 2) and type_sub[point] == 2:
+                ssh_sub[point] += apply_offset(month, 'ice')
+
         f.close()
         if len(lat_sub) > 3:
             # Do the DESCENDING tracks        
@@ -234,9 +235,6 @@ def grid05(data, lon_data, lat_data, lat_res, lon_res):
 
     xy_grid = xy_grid / xy_count
 
-    xy_grid = np.ma.masked_where(np.isnan(xy_grid), xy_grid)
-    xy_count = np.ma.masked_where(np.isnan(xy_count), xy_count)
-
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
 
 def grid(data, lon_data, lat_data, res):
@@ -285,69 +283,82 @@ def grid(data, lon_data, lat_data, res):
 
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
 
-def mode_offset(month, boundary):
-    if boundary == 'SAR':
+def apply_offset(month, boundary):
+    if boundary == 'SAR_ocean':
         if month == '01':
-            return 0.0
+            return 0.005
         elif month == '02':
-            return 0.0
+            return 0.007
         elif month == '03':
-            return 0.0
+            return -0.009
         elif month == '04':
-            return 0.0
+            return -0.018
         elif month == '05':
-            return 0.0
+            return -0.010
         elif month == '06':
-            return 0.0
+            return -0.019
         elif month == '07':
-            return 0.0
+            return -0.030
         elif month == '08':
-            return 0.0
+            return -0.022
         elif month == '09':
-            return 0.0
+            return -0.016
         elif month == '10':
-            return 0.0
+            return -0.017
         elif month == '11':
-            return 0.0
+            return 0.001
         elif month == '12':
-            return 0.0
-    if boundary == 'SARIn':
+            return 0.012
+    elif boundary == 'ice':
         if month == '01':
-            return 0.0
+            return 0.052
         elif month == '02':
-            return 0.0
+            return 0.044
         elif month == '03':
-            return 0.0
+            return 0.034
         elif month == '04':
-            return 0.0
+            return 0.043
         elif month == '05':
-            return 0.0
+            return 0.047
         elif month == '06':
-            return 0.0
+            return 0.065
         elif month == '07':
-            return 0.0
+            return 0.075
         elif month == '08':
-            return 0.0
+            return 0.075
         elif month == '09':
-            return 0.0
+            return 0.068
         elif month == '10':
-            return 0.0
+            return 0.072
         elif month == '11':
-            return 0.0
+            return 0.050
         elif month == '12':
-            return 0.0
-#January offset:  0.0532795957319
-#Febuary offset:  0.0424895753339
-#March offset:  0.044196774024
-#April offset:  0.058855642473
-#May offset:  0.0623327136638
-#June offset:  0.0885369699514
-#July offset:  0.108297693989
-#August offset:  0.104956289149
-#September offset:  0.0924955874413
-#October offset:  0.0964708361887
-#November offset:  0.0591056776193
-#December offset:  0.0469972667101
+            return 0.050
+#January LRM-SAR offset:  0.00489492491322
+#Febuary LRM-SAR offset:  0.00688199790682
+#March LRM-SAR offset:  -0.00897106525092
+#April LRM-SAR offset:  -0.0181416179892
+#May LRM-SAR offset:  -0.0101094678668
+#June LRM-SAR offset:  -0.0187603584627
+#July LRM-SAR offset:  -0.0295892239469
+#August LRM-SAR offset:  -0.0219179266994
+#September LRM-SAR offset:  -0.0162279361396
+#October LRM-SAR offset:  -0.0174250239166
+#November LRM-SAR offset:  0.00133077159719
+#December LRM-SAR offset:  0.0124794197335
+
+#January ocean-ice (SAR) offset:  0.0519413074729
+#Febuary ocean-ice (SAR) offset:  0.0440994674621
+#March ocean-ice (SAR) offset:  0.03386778963
+#April ocean-ice (SAR) offset:  0.0432063759616
+#May ocean-ice (SAR) offset:  0.0470435583904
+#June ocean-ice (SAR) offset:  0.0645406477081
+#July ocean-ice (SAR) offset:  0.0747555318892
+#August ocean-ice (SAR) offset:  0.0745253922656
+#September ocean-ice (SAR) offset:  0.0676124492288
+#October ocean-ice (SAR) offset:  0.0723514436851
+#November ocean-ice (SAR) offset:  0.0504626853533
+#December ocean-ice (SAR) offset:  0.04950011136
 
 def mode_points(lat, lon, month):
     '''Function that takes a list of lat and lon points and returns a list 
@@ -399,8 +410,9 @@ def mode_points(lat, lon, month):
     # For the track data
     stereo_x, stereo_y = m(lon, lat)
 
+    xy_pair = list(zip(stereo_x, stereo_y))
     point_type = []
-    for point in list(zip(stereo_x, stereo_y)):
+    for point in xy_pair:
         point_x = point[0]
         point_y = point[1]
         if in_me(point_x, point_y, polygon_SAR) == False and in_me(point_x, point_y, polygon_SARIn) == False:
