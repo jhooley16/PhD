@@ -4,46 +4,37 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
-yr = input('What year? (xxxx): ')
+dot = []
+for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + yr + '/MDT')
+    os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + year)
 
-mdt = []
-for file in os.listdir():
-    if file[-6:] == 'MDT.nc':
+    for file in os.listdir():
+        if file[-11:] == 'DOT_filt.nc':
+
+            nc = Dataset(file, 'r')
         
-        nc = Dataset(file, 'r')
+            dot.append(nc.variables['dynamic_ocean_topography'][:])
+            lat = nc.variables['latitude'][:]
+            lon = nc.variables['longitude'][:]
         
-        mdt.append(nc.variables['mean_dynamic_topography'][:])
-        lat = nc.variables['Latitude'][:]
-        lon = nc.variables['Longitude'][:]
-        
-        nc.close()
+            nc.close()
 
-mdt_mean = np.ma.mean(mdt, axis=0)
-#mdt_month_mean = np.ma.mean(np.ma.mean(mdt, 2), 1)
+dot_mean = np.nanmean(dot, axis=0)
 
-nc = Dataset(yr + '_mdt_mean.nc', 'w', format='NETCDF4_CLASSIC')
+nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/MDT_mean.nc', 'w')
 
 nc.createDimension('lat', np.size(lat))
 nc.createDimension('lon', np.size(lon))
-#nc.createDimension('months', np.size(mdt_month_mean))
 
-latitudes = nc.createVariable('Latitude', float, ('lat',))
-longitudes = nc.createVariable('Longitude', float, ('lon',))
-mdt_annual_mean = nc.createVariable('annual_mean_dynamic_topography', float, ('lon','lat'))
-#mdt_monthly_mean = nc.createVariable('monthly_mean_dynamic_topography', float, ('months', ))
-
+latitudes = nc.createVariable('latitude', float, ('lat',))
+longitudes = nc.createVariable('longitude', float, ('lon',))
+dot_annual_mean = nc.createVariable('mean_dynamic_topography', float, ('lat','lon'))
 latitudes[:] = lat
 longitudes[:] = lon
-mdt_annual_mean[:] = mdt_mean
-#mdt_monthly_mean[:] = mdt_month_mean
+dot_annual_mean[:] = dot_mean
 
 nc.close()
-
-#print(mdt_mean.min())
-#loc = np.where(mdt_mean == mdt_mean.min())
-#mdt_mean[(loc[0], loc[1])] = mdt_mean[(loc[0], loc[1])] * - 100
 
 pl.figure()
 pl.clf()
@@ -55,10 +46,10 @@ m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
 m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
 grid_lats, grid_lons = np.meshgrid(lat, lon)
 stereo_x, stereo_y = m(grid_lons, grid_lats)
-m.pcolor(stereo_x, stereo_y, mdt_mean)
+m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_mean)), cmap='RdBu_r')
 m.colorbar()
-pl.clim(3, -3)
-pl.savefig('Figures/' + yr + '_mean_MDT_1degree_stereo.png', format='png')
+pl.clim(0, -1.9)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/mean_DOT.png', format='png', transparent=True, dpi=300)
 pl.close()
 
 #pl.figure()
