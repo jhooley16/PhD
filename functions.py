@@ -193,6 +193,23 @@ def stereo(lat, lon):
     y = rho * np. cos(phi)  # stereographic y-coordinate in km
     return {'X': x, 'Y': y}
 
+def surface_area(lat, lon, cell_size_lat, cell_size_lon):
+    """A function to calculate the surface area of a grid cell on a sphere.
+        Grid cell has sides (cell_size_lat, cell_size_lon) in degrees.
+        Returns the surface area of the grid cell at location (lat, lon) in km^2."""
+    # Radius of the Earth (km)
+    R = 6371.
+    # Step 1, get limits of the grid cell in radians
+    lat_side_min = (lat - (cell_size_lat / 2)) * np.pi / 180
+    lat_side_max = (lat + (cell_size_lat / 2)) * np.pi / 180
+
+    lon_side_min = (lon - (cell_size_lon / 2)) * np.pi / 180
+    lon_side_max = (lon + (cell_size_lon / 2)) * np.pi / 180
+    
+    # Calculate the surface area of the cell
+    S = (R**2)*(lon_side_max - lon_side_min)*(np.sin(lat_side_max) - np.sin(lat_side_min))
+    
+    return S
 
 def grid05(data, lon_data, lat_data, lat_res, lon_res):
     """A function to grid lon, lat data and produce a masked array.
