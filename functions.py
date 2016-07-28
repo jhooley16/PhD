@@ -212,7 +212,7 @@ def surface_area(lat, lon, cell_size_lat, cell_size_lon):
     return S
 
 def grid05(data, lon_data, lat_data, lat_res, lon_res):
-    """A function to grid lon, lat data and produce a masked array.
+    """A function to grid lon, lat data.
     
     The data should be of the form (x, y, z), where x is the longitude, y is the latitude
     and z is the value at that position. data, lon_data, and lat_data must all have the  
@@ -251,52 +251,6 @@ def grid05(data, lon_data, lat_data, lat_res, lon_res):
             xy_count[ix_range, iy_range] = xy_count[ix_range, iy_range] + 1
 
     xy_grid = xy_grid / xy_count
-
-    return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
-
-def grid(data, lon_data, lat_data, res):
-    """A function to grid lon, lat data and produce a masked array.
-    
-    The data should be of the form (x, y, z), where x is the longitude, y is the latitude
-    and z is the value at that position. data, lon_data, and lat_data must all have the  
-    same length, and be one dimensional. res is the desired horizontal resolution, for example:
-    for a 1-degree grid, use res = 1, for 0.5-degree grid, use res = 0.5.
-    
-    The gridded data is drawn on an equidistant cylindrical projection. Use your favourite
-    projection conversion tool to convert the result to your desired projection.
-    
-    This simple function draws a square grid on top of the data distribution. Any data
-    points that lie within a grid square are averaged and the number of data points
-    averaged in that box is returned in xy_count."""
-
-    m = Basemap(projection='cyl', llcrnrlat=-90, urcrnrlat=-30, llcrnrlon=-180,
-                urcrnrlon=180, resolution='c')
-    x_cyl, y_cyl = m(lon_data, lat_data)
-
-    x_range = np.arange(np.round(np.min(x_cyl)), np.round(np.max(x_cyl)) + res, res)
-    y_range = np.arange(np.round(np.min(y_cyl)), np.round(np.max(y_cyl)) + res, res)
-    xy_grid = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
-    xy_count = np.full([np.size(x_range), np.size(y_range)], fill_value=np.nan)
-
-    for i in range(np.size(data)):
-        x_coord = float(decimal.Decimal(float(x_cyl[i])).quantize(decimal.Decimal(str(res))))
-        y_coord = float(decimal.Decimal(float(y_cyl[i])).quantize(decimal.Decimal(str(res))))
-
-        ix_range = np.where(np.logical_and(x_range > x_coord - res/2, x_range < x_coord + res/2))
-        iy_range = np.where(np.logical_and(y_range > y_coord - res/2, y_range < y_coord + res/2))
-
-        if np.isnan(xy_grid[ix_range, iy_range]):
-            xy_grid[ix_range, iy_range] = data[i]
-            xy_count[ix_range, iy_range] = 1
-
-        if not np.isnan(xy_grid[ix_range, iy_range]):
-            xy_grid[ix_range, iy_range] = xy_grid[ix_range, iy_range] + data[i]
-            xy_count[ix_range, iy_range] = xy_count[ix_range, iy_range] + 1
-
-    xy_grid = xy_grid / xy_count
-
-    xy_grid = np.ma.masked_where(np.isnan(xy_grid), xy_grid)
-    xy_count = np.ma.masked_where(np.isnan(xy_count), xy_count)
 
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
 
@@ -440,3 +394,25 @@ def mode_points(lat, lon, month):
             point_type.append(2)
     
     return point_type
+
+def inpaint_nans(y):
+    def nan_helper(y):
+        """Helper to handle indices and logical indices of NaNs.
+
+        Input:
+            - y, 1d numpy array with possible NaNs
+        Output:
+            - nans, logical indices of NaNs
+            - index, a function, with signature indices= index(logical_indices),
+              to convert logical indices of NaNs to 'equivalent' indices
+        Example:
+            >>> # linear interpolation of NaNs
+            >>> nans, x= nan_helper(y)
+            >>> y[nans]= np.interp(x(nans), x(~nans), y[~nans])
+        """
+
+        return np.isnan(y), lambda z: z.nonzero()[0]
+    nans, x= nan_helper(y)
+    y[nans]= np.interp(x(nans), x(~nans), y[~nans])
+    
+    return y
