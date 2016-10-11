@@ -84,7 +84,7 @@ for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 
     lat_SAR.append(lat_SAR[0])
     lon_SAR.append(lon_SAR[0])
     
-    nc.createDimension('station_SAR_'+month, np.size(lat_SAR))
+    nc.createDimension('station_SAR_' + month, np.size(lat_SAR))
 
     # SARIn
     lat = nc.createVariable('Lat_SAR_' + month, float, ('station_SAR_'+month,))

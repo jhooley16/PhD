@@ -35,17 +35,15 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             data = funct.grid05(ice_conc, lon, lat, float(lat_resolution), float(lon_resolution))
             grid_ice = data['Grid']
 
-            ## TODO: Apply land mask after gridding ##
             # Make the longitudes between 0 and 360
-            grid_lon[grid_lon < 0] += 361
+            grid_ssh, grid_lon = funct.lon_convert(grid_lon, grid_ssh)
+            grid_ice, grid_lon = funct.lon_convert(grid_lon, grid_ice)
+            #grid_lon[grid_lon < 0] += 361
 
-            grid_ssh = grid_ssh[np.argsort(grid_lon), :]
-            grid_ice = grid_ice[np.argsort(grid_lon), :]
-            grid_lon = grid_lon[np.argsort(grid_lon)]
-            
-            # Apply the land mask
-            
-            #nc = Dataset('mask.nc')
+            #grid_ssh = grid_ssh[np.argsort(grid_lon), :]
+            #grid_ice = grid_ice[np.argsort(grid_lon), :]
+            #grid_lon = grid_lon[np.argsort(grid_lon)]
+        
             
             month = file[4:6]
             pl.figure()

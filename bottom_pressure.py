@@ -3,139 +3,99 @@ import functions as funct
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as pl
+from scipy import stats
+from mpl_toolkits.basemap import Basemap
 
-yr = input('What year? (xxxx): ')
+## Create a bottom pressure/tide gauge - CS2 correlation map
 
-temp_day = 0
-mdt = []
-day_mdt = []
+# Load the bottom pressure data
+for station_name  in  ['AntBasePrat_bpr', 'Argentine_Islands_tide_gauge',
+    'Drake_passage_north_deep', 'Drake_passage_north', 'Drake_passage_south_deep',
+    'Drake_passage_south', 'Syowa_station_bpr']:
 
-for mnth in range(1, 13):
+    pressure_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/' + station_name + '_processed.csv'
 
-    if 0 < mnth < 10:
-        os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + yr + '0' + str(mnth) + '_elev')
-    if 10 <= mnth:
-        os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + yr + str(mnth) + '_elev')
-    directory = os.getcwd()
+    year = []
+    month = []
+    bpr = []
 
-    month = directory[-7:-5]
-    year = directory[-11:-7]
-    print(month, year)
-    
-    max_day = os.listdir()[-1][13:15]
-    for iday in range(1, int(max_day) + 1):
-        data = funct.day_data(iday, directory)
+    f = open(pressure_file, 'r')
+    for line in f:
+        line = line.strip()
+        columns = line.split(',')
+        year.append(int(columns[0]))
+        month.append(int(columns[1]))
+        bpr.append(float(columns[2]))
+    f.close()
+
+    locations_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/locations.csv'
+
+    # Open the locations (lat, lon) for the stations, to mark on correlation map
+    f = open(locations_file, 'r')
+    for line in f:
+        line = line.strip()
+        columns = line.split(',')
+        if columns[0] == station_name:
+            print(columns[0])
+            station_lat = float(columns[1])
+            station_lon = float(columns[2])
+    f.close()
+
+    # Load the altimetry data for the timeseries defined by the bottom
+    # pressure/tide gauge record
+
+    dot_anom_ts = np.zeros((59, 361, len(year)))
+
+    for t in range(len(year)):
+
+        # Make the month string consistent with the file convention
+        if int(month[t]) < 10:
+            month_str = '0' + str(month[t])
+        elif int(month[t]) >= 10:
+            month_str = str(month[t])
+
+        altimetry_file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' \
+            + str(year[t]) + '/Anomalies/' + str(year[t]) + month_str + '_DOT_anomaly.nc'
+
+        nc = Dataset(altimetry_file, 'r')
+        lat = nc.variables['latitude'][:]
+        lon = nc.variables['longitude'][:]
+        dot_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly'][:]
+        nc.close()
+
+    # Calculate the correlation between the time series and the altimetry data
+    dot_anom_xcorr = np.full((59, 361), fill_value=np.NaN)
+    dot_anom_xcorr_pvalues = np.full((59, 361), fill_value=np.NaN)
+
+    for ilat in range(len(lat)):
+        for ilon in range(len(lon)):
+            # If there are nans in the altimetry data
+            if np.any(np.isfinite(dot_anom_ts[ilat, ilon, :])):
+                xcorr = stats.spearmanr(funct.inpaint_nans(dot_anom_ts[ilat, ilon, :]), bpr)
+                dot_anom_xcorr[ilat, ilon] = xcorr[0]
+                dot_anom_xcorr_pvalues[ilat, ilon] = xcorr[1]
+
+    pl.figure()
+    pl.clf()
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    m.drawmapboundary()
+    m.drawcoastlines(zorder=10)
+    m.fillcontinents(zorder=10)
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
         
-        lat = data['lat']
-        lon = data['lon']
-        ssh = data['ssh']
+    grid_lats, grid_lons = np.meshgrid(lat, lon)
+    stereo_x, stereo_y = m(grid_lons, grid_lats)
         
-        ### If there is no data in the area, assign a NaN to this ###
-        if np.size(lat) == 0:
-            temp_day = temp_day + 1
-        else:
-            new_dir = '/Users/jmh2g09/Documents/PhD/Data/BPR/daily_data/'
-        
-            ### Generate the track File for use with GUT ###
-            if 0 < iday < 10:
-                nc = Dataset(new_dir + year + month + '0' + str(iday) + '_track.nc', 'w', format='NETCDF3_CLASSIC')
-            if 10 <= iday:
-                nc = Dataset(new_dir + year + month + str(iday) + '_track.nc', 'w', format='NETCDF3_CLASSIC')
+    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr)), cmap='RdBu_r')
+    m.colorbar()
+    pl.clim(1, -1)
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_pvalues)), [0.1], color='k')
 
-            nc.createDimension('station', np.size(lat))
+    location_x, location_y = m(station_lon, station_lat)
+    m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
 
-            longitudes = nc.createVariable('lon', float, ('station',))
-            latitudes = nc.createVariable('lat', float, ('station',))
-            crs = nc.createVariable('crs', 'i', ())
-        
-            latitudes.long_name = 'latitude'
-            latitudes.standard_name = 'latitude'
-            latitudes.units = 'degrees_north'
-            longitudes.long_name = 'longitude'
-            longitudes.standard_name = 'longitude'
-            longitudes.units = 'degrees_east'
-            crs.semi_major_axis = 6378137.
-            crs.inverse_flattening = 298.257222101004
-            crs.earth_gravity_constant = 398600500000000.
-            crs.earth_rotation_rate = 7.292115e-05
-        
-            latitudes[:] = lat
-            longitudes[:] = lon
-            nc.close()
-
-            if 0 < iday < 10:
-                os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack '
-                + new_dir + year + month + '0' + str(iday) + '_track.nc -OutFile ' +new_dir 
-                + year + month + '0' + str(iday) + '_geoid_track.nc')
-            if 10 <= iday:
-                os.system('gut geoidheight_tf -InFile GOCO05s.gfc -T tide-free -InTrack '
-                + new_dir + year + month + str(iday) + '_track.nc -OutFile ' + new_dir +
-                year + month + str(iday) + '_geoid_track.nc')
-        
-            ### Open the geoid_track file and compute the mdt ###
-        
-            if 0 < iday < 10:
-                nc = Dataset(new_dir + year + month + '0' + str(iday) + '_geoid_track.nc', 'r')
-            if 10 <= iday:
-                nc = Dataset(new_dir + year + month + str(iday) + '_geoid_track.nc', 'r')
-        
-            geoid_height = nc.variables['geoid_height'][:]
-        
-            nc.close()
-        
-            mdt.append(np.nanmean(ssh - geoid_height))
-            temp_day = temp_day + 1
-            day_mdt.append(temp_day)
-
-mdta = mdt - np.nanmean(mdt)
-
-# Bottom pressure recorder located in the Weddell Sea
-# -60.8249 N
-# -54.7221 E (305.2779 W)
-# depth = 1920 m 
-file = '/Users/jmh2g09/Documents/PhD/Data/BPR/DPS_DEEP_1113_DQ105443_drp.txt'
-
-day = []
-bpa_millibars = []
-
-f = open(file, 'r')
-
-for line in f:
-    line = line.strip()
-    columns = line.split()
-    if np.size(columns) > 4:
-        # only choose data for the year 2012
-        if columns[2] == '2012':
-            # only choose 'valid' data
-            if columns[1] == '0':
-                day.append(float(columns[3]))
-                bpa_millibars.append(float(columns[5]))
-
-# bottom pressure is measured in millibars, need to convert to Pascals
-# 1 millibar = 100 Pa
-bpa_pascals = np.array(bpa_millibars) * 100
-
-# Calculate the approximate change in sea level to produce the pressure change
-dh = bpa_pascals / (1025 * 9.81)
-
-
-
-# Save this data in a file for use later
-
-nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/BPR/' + yr + '_BPR.nc', 'w', FORMAT='NETCDF3_CLASSIC' )
-
-nc.createDimension('bp_length', np.size(dh))
-nc.createDimension('ssha_length', np.size(mdta))
-
-BP_data = nc.createVariable('BottomPressureAnomaly', float, ('bp_length',))
-BP_time = nc.createVariable('BottomPressureAnomaly_time', float, ('bp_length',))
-
-SSHA_data = nc.createVariable('SSHAnomaly', float, ('ssha_length',))
-SSHA_time = nc.createVariable('SSHAnomaly_time', float, ('ssha_length',))
-
-BP_data[:] = dh
-BP_time[:] = day
-SSHA_data[:] = mdta
-SSHA_time[:] = day_mdt
-
-nc.close()
+    pl.title('CryoSat-2 Altimetry and ' + station_name.replace('_', ' ') + ' Correlation')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation.png',
+        transparent=True, dpi=300)
+    pl.close()

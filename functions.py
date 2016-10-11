@@ -4,6 +4,7 @@ from mpl_toolkits.basemap import Basemap
 import decimal
 import scipy.ndimage
 from netCDF4 import Dataset
+import matplotlib.pyplot as pl
 
 def month_data(directory, month):
     """Extract latitude, longitude, sea surface height, surface ice concentration,
@@ -13,22 +14,39 @@ def month_data(directory, month):
     lat = []
     lon = []
     ssh = []
+    ssh_2 = []
     type = []
     ice_conc = []
     for file in files:
+        print(file)
         lat_sub = []
         lon_sub = []
         ssh_sub = []
+        ssh_2_sub = []
         type_sub = []
         ice_conc_sub = []
         lat_sub_asc = []
         lon_sub_asc = []
         ssh_sub_asc = []
+        ssh_sub_2_asc = []
         type_sub_asc = []
         ice_conc_sub_asc = []
         lat_sub_desc = []
         lon_sub_desc = []
         ssh_sub_desc = []
+        ssh_sub_2_desc = []
+        ssh_filt_desc = []
+        lat_sub_desc_new = []
+        lon_sub_desc_new = []
+        ssh_2_filt_desc = []
+        type_sub_desc_new = []
+        ice_conc_sub_desc_new = []
+        ssh_2_filt_asc = []
+        lon_sub_asc_new = []
+        type_sub_asc_new = []
+        ice_conc_sub_asc_new = []
+        ssh_filt_asc = []
+        lat_sub_asc_new = []
         type_sub_desc = []
         ice_conc_sub_desc = []
         f = open(file, 'r')
@@ -40,12 +58,14 @@ def month_data(directory, month):
                 # If data point is from open ocean (1) or from a lead (2)
                 if columns[0] == '1' or columns[0] == '2':
                     # If the ssh is less than 3 m from the mean ssh
-                    if float(columns[7]) - float(columns[8]) <= 3.:
+                    if abs(float(columns[7]) - float(columns[8])) <= 3.:
                         lat_sub.append(float(columns[5]))
                         lon_sub.append(float(columns[6]))
-                        ssh_sub.append(float(columns[7]))
                         ice_conc_sub.append(float(columns[11]))
                         type_sub.append(float(columns[0]))
+                        ssh_sub.append(float(columns[7]))
+                        ssh_2_sub.append(float(columns[7]))
+
         
         # Identify the surface and tracker and apply the necessary offset
         # Generate a list of the retracker used at each point
@@ -65,6 +85,7 @@ def month_data(directory, month):
             # If there are any descending tracks
             if len(descending) > 0.:
                 ssh_sub_desc = ssh_sub[descending[0]:descending[-1]]
+                ssh_sub_2_desc = ssh_2_sub[descending[0]:descending[-1]]
                 lat_sub_desc = lat_sub[descending[0]:descending[-1]]
                 lon_sub_desc = lon_sub[descending[0]:descending[-1]]
                 ice_conc_sub_desc = ice_conc_sub[descending[0]:descending[-1]]
@@ -84,22 +105,84 @@ def month_data(directory, month):
                 # In reverse order to avoid index problems
                 for bad in sorted(np.unique(bad_elements), reverse=True):
                     del ssh_sub_desc[bad]
+                    del ssh_sub_2_desc[bad]
                     del lat_sub_desc[bad]
                     del lon_sub_desc[bad]
                     del ice_conc_sub_desc[bad]
                     del type_sub_desc[bad]
-                lat += lat_sub_desc
-                lon += lon_sub_desc
-                type += type_sub_desc
-                ice_conc += ice_conc_sub_desc
-                # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
-                #ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc, 40.))
-                ssh += ssh_sub_desc
-        
+                
+                # Split the time series into two segments, where large gaps appear in the lat
+                lat_grad = np.abs(np.gradient(lat_sub_desc))
+                lat_grad_sort = sorted(lat_grad, reverse=True)
+                
+                print('Descending gaps')
+                threshold = np.where(lat_grad >= 0.2)[0]
+                
+                if len(threshold) > 0:
+
+                    if len(threshold) % 2 != 0:
+                        if np.gradient(threshold)[-1] == 1.:
+                            threshold = threshold[1:]
+                        elif np.gradient(threshold)[0] == 1.:
+                            threshold = threshold[:-1]
+                
+                    if len(threshold) > 2:
+                        arr = [[0, 0]]
+                        for igap in range(0, len(threshold), 2):
+                            arr.append([threshold[igap], threshold[igap + 1]])
+                        arr.append([-1, -1])
+                    else:
+                        arr = [[0,0],[threshold[0], threshold[1]],[-1,-1]]
+                
+                    pl.figure()
+                    for iarr in range(np.shape(arr)[0] - 1):
+                        cutoff_desc_1 = arr[iarr][1]
+                        cutoff_desc_2 = arr[iarr + 1][0]
+                
+                        ssh_sub_desc_1 = ssh_sub_desc[cutoff_desc_1:cutoff_desc_2]
+                        ssh_sub_2_desc_1 = ssh_sub_2_desc[cutoff_desc_1:cutoff_desc_2]
+                        lat_sub_desc_1 = lat_sub_desc[cutoff_desc_1:cutoff_desc_2]
+                        lon_sub_desc_1 = lon_sub_desc[cutoff_desc_1:cutoff_desc_2]
+                        type_sub_desc_1 = type_sub_desc[cutoff_desc_1:cutoff_desc_2]
+                        ice_conc_sub_desc_1 = ice_conc_sub_desc[cutoff_desc_1:cutoff_desc_2]
+                    
+                        pl.plot(lat_sub_desc_1, ssh_sub_desc_1)
+                                
+                        # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
+                        ssh_filt_desc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc_1, 15., mode='nearest'))
+                        ssh_filt_2_desc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_desc_1, 15., mode='nearest'))
+                        
+                        ssh_filt_desc += ssh_filt_desc_1
+                        ssh_2_filt_desc += ssh_filt_2_desc_1
+                        lat_sub_desc_new += lat_sub_desc_1
+                        lon_sub_desc_new += lon_sub_desc_1
+                        type_sub_desc_new += type_sub_desc_1
+                        ice_conc_sub_desc_new += ice_conc_sub_desc_1
+                
+                elif len(threshold) == 0:
+                    ssh_filt_desc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc, 15., mode='nearest'))
+                    ssh_2_filt_desc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_desc, 15., mode='nearest'))
+                    lat_sub_desc_new = lat_sub_desc
+                    lon_sub_desc_new = lon_sub_desc
+                    type_sub_desc_new = type_sub_desc
+                    ice_conc_sub_desc_new = ice_conc_sub_desc
+
+                pl.plot(lat_sub_desc_new, ssh_filt_desc, 'k')
+                pl.show()
+                pl.close()
+
+                lat += lat_sub_desc_new
+                lon += lon_sub_desc_new
+                type += type_sub_desc_new
+                ice_conc += ice_conc_sub_desc_new
+                ssh += ssh_filt_desc
+                ssh_2 += ssh_2_filt_desc
+
             ascending = np.where(np.gradient(lat_sub) > 0.)[0]
             # If there are any ascending tracks
             if len(ascending) > 0.:
                 ssh_sub_asc = ssh_sub[ascending[1]:ascending[-1]]
+                ssh_sub_2_asc = ssh_2_sub[ascending[1]:ascending[-1]]
                 lat_sub_asc = lat_sub[ascending[1]:ascending[-1]]
                 lon_sub_asc = lon_sub[ascending[1]:ascending[-1]]
                 ice_conc_sub_asc = ice_conc_sub[ascending[1]:ascending[-1]]
@@ -118,57 +201,79 @@ def month_data(directory, month):
                 
                 for bad in sorted(np.unique(bad_elements), reverse=True):
                     del ssh_sub_asc[bad]
+                    del ssh_sub_2_asc[bad]
                     del lat_sub_asc[bad]
                     del lon_sub_asc[bad]
                     del ice_conc_sub_asc[bad]
                     del type_sub_asc[bad]
-                lat += lat_sub_asc
-                lon += lon_sub_asc
-                type += type_sub_asc
-                ice_conc += ice_conc_sub_asc
-                # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
-                #ssh += list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc, 40.))
-                ssh += ssh_sub_asc
+                
+                # Split the time series into two segments, where large gaps appear in the lat
+                lat_grad = np.abs(np.gradient(lat_sub_asc))
+                lat_grad_sort = sorted(lat_grad, reverse=True)
+                
+                print('Ascending gaps')
+                threshold = np.where(lat_grad >= 0.2)[0]
+                
+                if len(threshold) > 0:
+                    if len(threshold) % 2 != 0:
+                        if np.gradient(threshold)[-1] == 1.:
+                            threshold = threshold[1:]
+                        elif np.gradient(threshold)[0] == 1.:
+                            threshold = threshold[:-1]
 
-    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc, 'type': type}
+                    if len(threshold) > 2:
+                        arr = [[0, 0]]
+                        for igap in range(0, len(threshold), 2):
+                            arr.append([threshold[igap], threshold[igap + 1]])
+                        arr.append([-1, -1])
+                    else:
+                        arr = [[0,0],[threshold[0], threshold[1]],[-1,-1]]
+                
+                    pl.figure()
+                    for iarr in range(np.shape(arr)[0] - 1):
+                        cutoff_asc_1 = arr[iarr][1]
+                        cutoff_asc_2 = arr[iarr + 1][0]
 
-def day_data(day, directory):
-    """Extract latitude, longitude, sea surface height, and surface ice concentration
-    data for a certain day in 'directory'. The data is taken from a certain area 
-    defined by the latitude and longitude limits. See the code for details.
-    eg: directory = '/Users/jmh2g09/Desktop/201203_MERGE'
-    day corresponds to the day in a particular month."""
-    files = os.listdir(directory)
-    if 10 <= day <= 31:
-        dayfiles = [file for file in files if file[13:15] == str(day)]
-    if day < 10:
-        dayfiles = [file for file in files if file[14] == str(day)]
-    lat = []
-    lon = []
-    ssh = []
-    ice_conc = []
-    for file in dayfiles:
-        f = open(file, 'r')
-        for line in f:
-            line = line.strip()
-            columns = line.split()
-            # If data point is from open ocean [1] or from a lead [2]
-            if columns[0] == '1' or columns[0] == '2':
-                # If data point is listed as 'valid'
-                if columns[1] == '1':
-                    # If the ssh is less than 3m from the mean ssh
-                    if float(columns[7]) - float(columns[8]) <= 3.:
-                        # If the latitude lies between
-                        if -60. > float(columns[5]) > -62.:
-                            # If the longitude lies between
-                            if -54. > float(columns[6]) > -56.:
-                                lat.append(float(columns[5]))
-                                lon.append(float(columns[6]))
-                                ssh.append(float(columns[7]))
-                                ice_conc.append(float(columns[11]))
-        f.close()
-    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc}
+                        ssh_sub_asc_1 = ssh_sub_asc[cutoff_asc_1:cutoff_asc_2]
+                        ssh_sub_2_asc_1 = ssh_sub_2_asc[cutoff_asc_1:cutoff_asc_2]
+                        lat_sub_asc_1 = lat_sub_asc[cutoff_asc_1:cutoff_asc_2]
+                        lon_sub_asc_1 = lon_sub_asc[cutoff_asc_1:cutoff_asc_2]
+                        type_sub_asc_1 = type_sub_asc[cutoff_asc_1:cutoff_asc_2]
+                        ice_conc_sub_asc_1 = ice_conc_sub_asc[cutoff_asc_1:cutoff_asc_2]
+                    
+                        pl.plot(lat_sub_asc_1, ssh_sub_asc_1)
+                                
+                        # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
+                        ssh_filt_asc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc_1, 15., mode='nearest'))
+                        ssh_filt_2_asc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_asc_1, 15., mode='nearest'))
+                        
+                        ssh_filt_asc += ssh_filt_asc_1
+                        ssh_2_filt_asc += ssh_filt_2_asc_1
+                        lat_sub_asc_new += lat_sub_asc_1
+                        lon_sub_asc_new += lon_sub_asc_1
+                        type_sub_asc_new += type_sub_asc_1
+                        ice_conc_sub_asc_new += ice_conc_sub_asc_1
+                
+                elif len(threshold) == 0:
+                    ssh_filt_asc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc, 15., mode='nearest'))
+                    ssh_2_filt_asc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_asc, 15., mode='nearest'))
+                    lat_sub_asc_new = lat_sub_asc
+                    lon_sub_asc_new = lon_sub_asc
+                    type_sub_asc_new = type_sub_asc
+                    ice_conc_sub_asc_new = ice_conc_sub_asc
 
+                pl.plot(lat_sub_asc_new, ssh_filt_asc, 'k')
+                pl.show()
+                pl.close()
+
+                lat += lat_sub_asc_new
+                lon += lon_sub_asc_new
+                type += type_sub_asc_new
+                ice_conc += ice_conc_sub_asc_new
+                ssh += ssh_filt_asc
+                ssh_2 += ssh_2_filt_asc
+
+    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ssh_2': ssh_2, 'ice_conc': ice_conc, 'type': type}
 
 def stereo(lat, lon):
     """Convert Lat and Lon (Polar) coordinates to stereographic (x, y) coordinates (km).

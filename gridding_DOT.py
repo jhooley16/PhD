@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
-for year in ['2015']:#, '2011', '2012', '2013', '2014', '2016']:
+for year in ['2010', '2011', '2012', '2013', '2014', '2016']:
     lat_resolution = '0.5'    #input('What latitude resolution?: ')
     lon_resolution = '1.0'      #input ('What longitude resolution?: ')
 
@@ -35,6 +35,7 @@ for year in ['2015']:#, '2011', '2012', '2013', '2014', '2016']:
             data = funct.grid05(ice_conc, lon, lat, float(lat_resolution), float(lon_resolution))
             grid_ice = data['Grid']
 
+            ## TODO: Apply land mask after gridding ##
             # Make the longitudes between 0 and 360
             grid_lon[grid_lon < 0] += 361
 
@@ -43,9 +44,17 @@ for year in ['2015']:#, '2011', '2012', '2013', '2014', '2016']:
             grid_lon = grid_lon[np.argsort(grid_lon)]
             
             # Apply the land mask
-            
-            nc = Dataset('mask.nc')
-            
+
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
+            # Load the mask (ocean == 1)
+            ocean_mask = np.transpose(nc.variables['z'][:])
+            nc.close()
+
+            land = np.where(ocean_mask != 1)
+
+            for i in range(np.shape(land)[1]):
+                grid_dot[land[0][i]][land[1][i]] = np.NaN
+
             month = file[4:6]
             pl.figure()
             pl.clf()

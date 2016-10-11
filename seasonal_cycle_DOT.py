@@ -125,6 +125,7 @@ pl.legend()
 pl.xlabel('Month')
 pl.ylabel('Dynamic Ocean Topography Anomaly (m)')
 pl.xlim([1, 12])
+pl.xticks(np.arange(1, 13, 1))
 pl.savefig('../../../../Seasonal/DOT_seasonal_cycle.png', format='png', dpi=300)
 pl.close()
 

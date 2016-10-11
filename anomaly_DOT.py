@@ -57,7 +57,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             m.colorbar()
             #A = np.std(mdt_anomaly)
             #B = np.mean(mdt_anomaly)
-            pl.clim(.5, -.5)
+            pl.clim(.3, -.3)
             m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_data)), colors='k', levels=[20])
             pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_DOT_anomaly.png', format='png', transparent=True, dpi=300)
             pl.close()

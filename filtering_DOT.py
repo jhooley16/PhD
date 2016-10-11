@@ -19,31 +19,19 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             nc.close()
 
-            # Filter the DOT with a 300km gaussian filter
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography" -D4 -Fg500 -Nr -f0y -f1x -G' + year + month + '_DOT_filt.nc')
+            # Filter the DOT with a 800km gaussian filter
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography" -D4 -Fg800 -Nr -f0y -f1x -G' + year + month + '_DOT_filt.nc')
 
             # Open the filtered data
             nc = Dataset(year + month + '_DOT_filt.nc', 'r')
             dot_filt = np.array(nc.variables['z'][:])
             nc.close()
 
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"sea_ice_concentration" -D4 -Fg600 -Ni -f0y -f1x -G' + year + month + '_DOT_filt.nc')
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"sea_ice_concentration" -D4 -Fg1000 -Ni -f0y -f1x -G' + year + month + '_DOT_filt.nc')
 
             nc = Dataset(year + month + '_DOT_filt.nc', 'r')
             ice_filt = np.array(nc.variables['z'][:])
             nc.close()
-            
-            print(np.shape(dot_filt))
-            # Apply the land mask
-
-            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
-            # Load the mask (ocean == 1)
-            ocean_mask = nc.variables['z'][:]
-            nc.close()
-            
-            land = np.where(ocean_mask != 1)
-            for i in range(np.shape(land)[1]):
-                dot_filt[land[0][i]][land[1][i]] = np.NaN
 
             pl.figure()
             pl.clf()
@@ -59,7 +47,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
         
             m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_filt)), cmap='RdBu_r')
             m.colorbar()
-            pl.clim([0, -2])
+            pl.clim([0, -2.25])
             #pl.clim(np.mean(np.ma.masked_invalid(dot_filt)) + 3*np.std(np.ma.masked_invalid(dot_filt)), np.mean(np.ma.masked_invalid(dot_filt)) - 3*np.std(np.ma.masked_invalid(dot_filt)))
             m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_filt)), [60,])
             pl.savefig('Figures/' + year + month + '_DOT_filt.png', format='png', transparent=True, dpi=300)
