@@ -5,6 +5,7 @@ import decimal
 import scipy.ndimage
 from netCDF4 import Dataset
 import matplotlib.pyplot as pl
+import os
 
 def month_data(directory, month):
     """Extract latitude, longitude, sea surface height, surface ice concentration,
@@ -18,7 +19,7 @@ def month_data(directory, month):
     type = []
     ice_conc = []
     for file in files:
-        #print(file)
+        print(file)
         lat_sub = []
         lon_sub = []
         ssh_sub = []
@@ -76,10 +77,10 @@ def month_data(directory, month):
             # If the point is SAR or SARIn and Lead
             elif (mode[point] == 1 or mode[point] == 2) and type_sub[point] == 2:
                 ssh_sub[point] += apply_offset(month, 'ice')
-
         f.close()
+        
         if len(lat_sub) > 3:
-            # Do the DESCENDING tracks        
+            # Do the DESCENDING tracks
             descending = np.where(np.gradient(lat_sub) < 0.)[0]
             # If there are any descending tracks
             if len(descending) > 0.:
@@ -110,113 +111,79 @@ def month_data(directory, month):
                     del ice_conc_sub_desc[bad]
                     del type_sub_desc[bad]
                 
-                # Split the time series into two segments, where large gaps appear in the lat
-                lat_grad = np.abs(np.gradient(lat_sub_desc))
-                lat_grad_sort = sorted(lat_grad, reverse=True)
+                #ssh_sub_desc = np.array(ssh_sub_desc)
+                #ssh_sub_desc = list(ssh_sub_desc[np.argsort(lat_sub_desc)])
+                #ssh_sub_2_desc = np.array(ssh_sub_2_desc)
+                #ssh_sub_2_desc = list(ssh_sub_2_desc[np.argsort(lat_sub_desc)])
+                #ice_conc_sub_desc = np.array(ice_conc_sub_desc)
+                #ice_conc_sub_desc = list(ice_conc_sub_desc[np.argsort(lat_sub_desc)])
+                #lat_sub_desc = sorted(lat_sub_desc)
                 
-                #print('Descending gaps')
-                threshold = np.where(lat_grad >= 0.4)[0]
+                ## Filter the track
+                input_ssh = open('../INPUT_ssh.dat', 'w')
+                input_ssh2 = open('../INPUT_ssh2.dat', 'w')
+                input_ice = open('../INPUT_ice.dat', 'w')
+                for ilat in range(len(lat_sub_desc)):
+                    print(-lat_sub_desc[ilat], ssh_sub_desc[ilat], file=input_ssh)
+                    print(-lat_sub_desc[ilat], ssh_sub_2_desc[ilat], file=input_ssh2)
+                    print(-lat_sub_desc[ilat], ice_conc_sub_desc[ilat], file=input_ice)
+                input_ssh.close()
+                input_ssh2.close()
+                input_ice.close()
                 
-                if len(threshold) > 1:
-                    print(threshold)
-                    grad = np.gradient(threshold)
-                    print(grad)
-                    
-                    if np.logical_and(grad[0] == 1., grad[-1] > 1.):
-                        threshold_2 = threshold[:-1]
-                    elif np.logical_and(grad[0] > 1., grad[-1] == 1.):
-                        threshold_2 = threshold[1:]
-                    elif np.logical_and(grad[0] == 1., grad[-1] == 1.):
-                        threshold_2 = threshold
-                    elif np.logical_and(grad[0] > 1., grad[-1] > 1.):
-                        threshold_2 = threshold
-                    
-                    #grad_2 = np.gradient(threshold_2)
-                    
-                    #if any(np.logical_and(grad_2[1:-1] >= 1., grad_2[1:-1] <= 5.)):
-                        #threshold_3 = np.delete(threshold_2, np.where(np.logical_and(grad_2[1:-1] >= 1., grad_2[1:-1] <= 5.))[0] + 1)
-                    #else:
-                    #threshold_3 = threshold_2
-                        
-                    if len(threshold_2) % 2 != 0.:
-                        if len(threshold_2) == 3.:
-                            threshold_3 = list(np.delete(threshold_2, 1))
-                        elif len(threshold_2) == 5.:
-                            threshold_3 = list(np.delete(threshold_2, 2))
-
-                        elif len(threshold_2) > 5:
-                            
-                            threshold_odd_beginning = threshold_2[:2]
-                            threshold_odd_end = threshold_2[-2:]
-                            
-                            grad_odd = np.gradient(threshold_2[2:-2])
-                            print(grad_odd)
-                            if np.logical_and(grad_odd[0] == 1., grad_odd[-1] == 1.):
-                                threshold_odd = np.delete(threshold_2[2:-2], 2)
-                            elif np.logical_and(grad_odd[0] > 1., grad_odd[-1] == 1.):
-                                threshold_odd = threshold_2[3:-2]
-                            elif np.logical_and(grad_odd[0] == 1., grad_odd[-1] > 1.):
-                                threshold_odd = threshold_2[2:-3]
-                            elif np.logical_and(grad_odd[0] > 1., grad_odd[-1] > 1.):
-                                print('Then we''re pretty fucked (Asc)')
-                            
-                            threshold_3 = list(threshold_odd_beginning) + list(threshold_odd) + list(threshold_odd_end)
-                    else:
-                        threshold_3 = threshold_2
-
-                    print(threshold_3)
-                    
-                    if len(threshold_3) > 2:
-                        arr = [[0, 0]]
-                        for igap in range(0, len(threshold_3), 2):
-                            arr.append([threshold_3[igap], threshold_3[igap + 1]])
-                        arr.append([-1, -1])
-                    else:
-                        arr = [[0,0],[threshold_3[0], threshold_3[1]],[-1,-1]]
+                #pl.figure()
+                #pl.plot(lat_sub_desc, ssh_sub_desc, 'k')
                 
-                    #pl.figure()
-                    for iarr in range(np.shape(arr)[0] - 1):
-                        cutoff_desc_1 = arr[iarr][1]
-                        cutoff_desc_2 = arr[iarr + 1][0]
+                os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
+                os.system('gmt filter1d ../INPUT_ssh2.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh2.dat')
+                os.system('gmt filter1d ../INPUT_ice.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
                 
-                        ssh_sub_desc_1 = ssh_sub_desc[cutoff_desc_1:cutoff_desc_2]
-                        ssh_sub_2_desc_1 = ssh_sub_2_desc[cutoff_desc_1:cutoff_desc_2]
-                        lat_sub_desc_1 = lat_sub_desc[cutoff_desc_1:cutoff_desc_2]
-                        lon_sub_desc_1 = lon_sub_desc[cutoff_desc_1:cutoff_desc_2]
-                        type_sub_desc_1 = type_sub_desc[cutoff_desc_1:cutoff_desc_2]
-                        ice_conc_sub_desc_1 = ice_conc_sub_desc[cutoff_desc_1:cutoff_desc_2]
-                        
-                        #pl.plot(lat_sub_desc_1, ssh_sub_desc_1)
-                                
-                        # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
-                        ssh_filt_desc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc_1, 15., mode='nearest'))
-                        ssh_filt_2_desc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_desc_1, 15., mode='nearest'))
-                            
-                        ssh_filt_desc += ssh_filt_desc_1
-                        ssh_2_filt_desc += ssh_filt_2_desc_1
-                        lat_sub_desc_new += lat_sub_desc_1
-                        lon_sub_desc_new += lon_sub_desc_1
-                        type_sub_desc_new += type_sub_desc_1
-                        ice_conc_sub_desc_new += ice_conc_sub_desc_1
+                os.system('rm ../INPUT_ssh.dat ../INPUT_ssh2.dat ../INPUT_ice.dat')
                 
-                else:
-                    ssh_filt_desc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_desc, 15., mode='nearest'))
-                    ssh_2_filt_desc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_desc, 15., mode='nearest'))
-                    lat_sub_desc_new = lat_sub_desc
-                    lon_sub_desc_new = lon_sub_desc
-                    type_sub_desc_new = type_sub_desc
-                    ice_conc_sub_desc_new = ice_conc_sub_desc
-
-                #pl.plot(lat_sub_desc_new, ssh_filt_desc, 'k')
+                output_ssh = open('../OUTPUT_ssh.dat', 'r')
+                lat_sub_desc = []
+                ssh_sub_desc = []
+                for line in output_ssh:
+                    line.strip()
+                    columns = line.split()
+                    lat_sub_desc.append(-float(columns[0]))
+                    ssh_sub_desc.append(float(columns[1]))
+                output_ssh.close()
+                
+                output_ssh2 = open('../OUTPUT_ssh2.dat', 'r')
+                lat_sub_desc = []
+                ssh_sub_2_desc = []
+                for line in output_ssh2:
+                    line.strip()
+                    columns = line.split()
+                    lat_sub_desc.append(-float(columns[0]))
+                    ssh_sub_2_desc.append(float(columns[1]))
+                output_ssh2.close()
+                
+                output_ice = open('../OUTPUT_ice.dat', 'r')
+                lat_sub_desc = []
+                ice_conc_sub_desc = []
+                for line in output_ice:
+                    line.strip()
+                    columns = line.split()
+                    lat_sub_desc.append(-float(columns[0]))
+                    ice_conc_sub_desc.append(float(columns[1]))
+                output_ice.close()
+                
+                os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ssh2.dat ../OUTPUT_ice.dat')
+                
+                #pl.plot(lat_sub_desc, ssh_sub_desc, 'r')
+                #pl.title('DESC')
                 #pl.show()
                 #pl.close()
-
-                lat += lat_sub_desc_new
-                lon += lon_sub_desc_new
-                type += type_sub_desc_new
-                ice_conc += ice_conc_sub_desc_new
-                ssh += ssh_filt_desc
-                ssh_2 += ssh_2_filt_desc
+                
+                if len(lat_sub_desc) == len(lon_sub_desc):
+                    lat += lat_sub_desc
+                    lon += lon_sub_desc
+                    type += type_sub_desc
+                    ice_conc += ice_conc_sub_desc
+                    ssh += ssh_sub_desc
+                    ssh_2 += ssh_sub_2_desc
 
             ascending = np.where(np.gradient(lat_sub) > 0.)[0]
             # If there are any ascending tracks
@@ -247,115 +214,79 @@ def month_data(directory, month):
                     del ice_conc_sub_asc[bad]
                     del type_sub_asc[bad]
                 
-                # Split the time series into two segments, where large gaps appear in the lat
-                lat_grad = np.abs(np.gradient(lat_sub_asc))
-                lat_grad_sort = sorted(lat_grad, reverse=True)
+                #ssh_sub_asc = np.array(ssh_sub_asc)
+                #ssh_sub_asc = list(ssh_sub_asc[np.argsort(lat_sub_asc)])
+                #ssh_sub_2_asc = np.array(ssh_sub_2_asc)
+                #ssh_sub_2_asc = list(ssh_sub_2_asc[np.argsort(lat_sub_asc)])
+                #ice_conc_sub_asc = np.array(ice_conc_sub_asc)
+                #ice_conc_sub_asc = list(ice_conc_sub_asc[np.argsort(lat_sub_asc)])
+                #lat_sub_asc = sorted(lat_sub_asc)
                 
-                #print('Ascending gaps')
-                threshold = np.where(lat_grad >= 0.4)[0]
+                ## Filter the track
+                input_ssh = open('../INPUT_ssh.dat', 'w')
+                input_ssh2 = open('../INPUT_ssh2.dat', 'w')
+                input_ice = open('../INPUT_ice.dat', 'w')
+                for ilat in range(len(lat_sub_asc)):
+                    print(lat_sub_asc[ilat], ssh_sub_asc[ilat], file=input_ssh)
+                    print(lat_sub_asc[ilat], ssh_sub_2_asc[ilat], file=input_ssh2)
+                    print(lat_sub_asc[ilat], ice_conc_sub_asc[ilat], file=input_ice)
+                input_ssh.close()
+                input_ssh2.close()
+                input_ice.close()
                 
-                if len(threshold) > 1:
-                    print(threshold)
-                    grad = np.gradient(threshold)
-                    print(grad)
-                    
-                    if np.logical_and(grad[0] == 1., grad[-1] > 1.):
-                        threshold_2 = threshold[:-1]
-                    elif np.logical_and(grad[0] > 1., grad[-1] == 1.):
-                        threshold_2 = threshold[1:]
-                    elif np.logical_and(grad[0] == 1., grad[-1] == 1.):
-                        threshold_2 = threshold
-                    elif np.logical_and(grad[0] > 1., grad[-1] > 1.):
-                        threshold_2 = threshold
-                    else:
-                        threshold_2 = threshold
-                    
-                    #grad_2 = np.gradient(threshold_2)
-                    
-                    #if any(np.logical_and(grad_2[1:-1] >= 1., grad_2[1:-1] <= 5.)):
-                        #threshold_3 = np.delete(threshold_2, np.where(np.logical_and(grad_2[1:-1] >= 1., grad_2[1:-1] <= 5.))[0] + 1)
-                    #else:
-                    #threshold_3 = threshold_2
-                        
-                    if len(threshold_2) % 2 != 0.:
-                        if len(threshold_2) == 3.:
-                            threshold_3 = list(np.delete(threshold_2, 1))
-                        elif len(threshold_2) == 5.:
-                            threshold_3 = list(np.delete(threshold_2, 2))
-
-                        elif len(threshold_2) > 5:
-                            
-                            threshold_odd_beginning = threshold_2[:2]
-                            threshold_odd_end = threshold_2[-2:]
-                            
-                            grad_odd = np.gradient(threshold_2[2:-2])
-                            print(grad_odd)
-                            if np.logical_and(grad_odd[0] == 1., grad_odd[-1] == 1.):
-                                threshold_odd = np.delete(threshold_2[2:-2], 2)
-                            elif np.logical_and(grad_odd[0] > 1., grad_odd[-1] == 1.):
-                                threshold_odd = threshold_2[3:-2]
-                            elif np.logical_and(grad_odd[0] == 1., grad_odd[-1] > 1.):
-                                threshold_odd = threshold_2[2:-3]
-                            elif np.logical_and(grad_odd[0] > 1., grad_odd[-1] > 1.):
-                                print('Then we''re pretty fucked (Asc)')
-                            
-                            threshold_3 = list(threshold_odd_beginning) + list(threshold_odd) + list(threshold_odd_end)
-                    else:
-                        threshold_3 = threshold_2
-
-                    print(threshold_3)
-
-                    if len(threshold_3) > 2:
-                        arr = [[0, 0]]
-                        for igap in range(0, len(threshold_3), 2):
-                            arr.append([threshold_3[igap], threshold_3[igap + 1]])
-                        arr.append([-1, -1])
-                    else:
-                        arr = [[0,0],[threshold_3[0], threshold_3[1]],[-1,-1]]
+                #pl.figure()
+                #pl.plot(lat_sub_asc, ssh_sub_asc, 'k')
                 
-                    #pl.figure()
-                    for iarr in range(np.shape(arr)[0] - 1):
-                        cutoff_asc_1 = arr[iarr][1]
-                        cutoff_asc_2 = arr[iarr + 1][0]
-
-                        ssh_sub_asc_1 = ssh_sub_asc[cutoff_asc_1:cutoff_asc_2]
-                        ssh_sub_2_asc_1 = ssh_sub_2_asc[cutoff_asc_1:cutoff_asc_2]
-                        lat_sub_asc_1 = lat_sub_asc[cutoff_asc_1:cutoff_asc_2]
-                        lon_sub_asc_1 = lon_sub_asc[cutoff_asc_1:cutoff_asc_2]
-                        type_sub_asc_1 = type_sub_asc[cutoff_asc_1:cutoff_asc_2]
-                        ice_conc_sub_asc_1 = ice_conc_sub_asc[cutoff_asc_1:cutoff_asc_2]
-                    
-                        #pl.plot(lat_sub_asc_1, ssh_sub_asc_1)
-                                
-                        # Apply a gaussian filter to the ssh data, with a 40 point (10 km) diameter
-                        ssh_filt_asc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc_1, 15., mode='nearest'))
-                        ssh_filt_2_asc_1 = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_asc_1, 15., mode='nearest'))
-                        
-                        ssh_filt_asc += ssh_filt_asc_1
-                        ssh_2_filt_asc += ssh_filt_2_asc_1
-                        lat_sub_asc_new += lat_sub_asc_1
-                        lon_sub_asc_new += lon_sub_asc_1
-                        type_sub_asc_new += type_sub_asc_1
-                        ice_conc_sub_asc_new += ice_conc_sub_asc_1
+                os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
+                os.system('gmt filter1d ../INPUT_ssh2.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh2.dat')
+                os.system('gmt filter1d ../INPUT_ice.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
                 
-                else:
-                    ssh_filt_asc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_asc, 15., mode='nearest'))
-                    ssh_2_filt_asc = list(scipy.ndimage.filters.gaussian_filter1d(ssh_sub_2_asc, 15., mode='nearest'))
-                    lat_sub_asc_new = lat_sub_asc
-                    lon_sub_asc_new = lon_sub_asc
-                    type_sub_asc_new = type_sub_asc
-                    ice_conc_sub_asc_new = ice_conc_sub_asc
-
-                #pl.plot(lat_sub_asc_new, ssh_filt_asc, 'k')
+                os.system('rm ../INPUT_ssh.dat ../INPUT_ssh2.dat ../INPUT_ice.dat')
+                
+                output_ssh = open('../OUTPUT_ssh.dat', 'r')
+                lat_sub_asc = []
+                ssh_sub_asc = []
+                for line in output_ssh:
+                    line.strip()
+                    columns = line.split()
+                    lat_sub_asc.append(float(columns[0]))
+                    ssh_sub_asc.append(float(columns[1]))
+                output_ssh.close()
+                
+                output_ssh2 = open('../OUTPUT_ssh2.dat', 'r')
+                lat_sub_asc = []
+                ssh_sub_2_asc = []
+                for line in output_ssh2:
+                    line.strip()
+                    columns = line.split()
+                    lat_sub_asc.append(float(columns[0]))
+                    ssh_sub_2_asc.append(float(columns[1]))
+                output_ssh2.close()
+                
+                output_ice = open('../OUTPUT_ice.dat', 'r')
+                lat_sub_asc = []
+                ice_conc_sub_asc = []
+                for line in output_ice:
+                    line.strip()
+                    columns = line.split()
+                    lat_sub_asc.append(float(columns[0]))
+                    ice_conc_sub_asc.append(float(columns[1]))
+                output_ice.close()
+                
+                os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ssh2.dat ../OUTPUT_ice.dat')
+                
+                #pl.plot(lat_sub_asc, ssh_sub_asc, 'r')
+                #pl.title('ASC')
                 #pl.show()
                 #pl.close()
-
-                lat += lat_sub_asc_new
-                lon += lon_sub_asc_new
-                type += type_sub_asc_new
-                ice_conc += ice_conc_sub_asc_new
-                ssh += ssh_filt_asc
-                ssh_2 += ssh_2_filt_asc
+                
+                if len(lat_sub_desc) == len(lon_sub_desc):
+                    lat += lat_sub_asc
+                    lon += lon_sub_asc
+                    type += type_sub_asc
+                    ice_conc += ice_conc_sub_asc
+                    ssh += ssh_sub_asc
+                    ssh_2 += ssh_sub_2_asc
 
     return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ssh_2': ssh_2, 'ice_conc': ice_conc, 'type': type}
 

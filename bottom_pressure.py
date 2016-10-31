@@ -3,20 +3,24 @@ import functions as funct
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as pl
-from scipy import stats
+from datetime import date
+import matplotlib.dates as mdates
+from scipy import stats, signal
 from mpl_toolkits.basemap import Basemap
 
 ## Create a bottom pressure/tide gauge - CS2 correlation map
 
 # Load the bottom pressure data
-for station_name  in  ['AntBasePrat_bpr', 'Argentine_Islands_tide_gauge',
-    'Drake_passage_north_deep', 'Drake_passage_north', 'Drake_passage_south_deep',
-    'Drake_passage_south', 'Syowa_station_bpr']:
+fig = pl.figure()
+for station_name  in  ['Argentine_Islands_tide_gauge', 'DrakePassageNorthDeep_bpr', 
+    'DrakePassageSouthDeep_bpr', 'DrakePassageSouth_bpr',
+    'Syowa_station_tide_gauge']:#'DrakePassageNorth_bpr','AntBasePrat_tide_gauge',]:
 
-    pressure_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/' + station_name + '_processed.csv'
+    pressure_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/' + station_name + '_corrected_monthly.csv'
 
     year = []
     month = []
+    dates = []
     bpr = []
 
     f = open(pressure_file, 'r')
@@ -25,8 +29,35 @@ for station_name  in  ['AntBasePrat_bpr', 'Argentine_Islands_tide_gauge',
         columns = line.split(',')
         year.append(int(columns[0]))
         month.append(int(columns[1]))
-        bpr.append(float(columns[2]))
+        # Convert the bottom pressure (millibars) to water depth changes
+        # 1 millibar approx = 1 cm water
+        if station_name[-3:] == 'bpr':
+            bpr.append(float(columns[2]) / 100)
+        else:
+            bpr.append(float(columns[2]))
+        
+        dates.append(date(int(columns[0]), int(columns[1]), 15))
+        
     f.close()
+    
+    start_year = year[0]
+    start_month = month[0]
+    end_year = year[-1]
+    end_month = month[-1]
+    
+    new_year = []
+    new_month = []
+
+    for iyear in range(start_year, end_year + 1):
+        for imonth in range(1, 13):
+            new_year.append(iyear)
+            new_month.append(imonth)
+    
+    new_bpr = np.full(len(new_year), np.NaN)
+    for idat in range(len(new_year)):
+        if np.any(np.logical_and(np.array(year) == new_year[idat], np.array(month) == new_month[idat])):
+            ind = np.where(np.logical_and(np.array(year) == new_year[idat], np.array(month) == new_month[idat]))
+            new_bpr[idat] = bpr[ind[0][0]]
 
     locations_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/locations.csv'
 
@@ -41,39 +72,56 @@ for station_name  in  ['AntBasePrat_bpr', 'Argentine_Islands_tide_gauge',
             station_lon = float(columns[2])
     f.close()
 
+    pl.plot(dates, new_bpr, label=station_name)
+
+    
     # Load the altimetry data for the timeseries defined by the bottom
     # pressure/tide gauge record
 
-    dot_anom_ts = np.zeros((59, 361, len(year)))
+    dot_anom_ts = np.zeros((59, 361, len(new_year)))
+    dot_2_anom_ts = np.zeros((59, 361, len(new_year)))
 
-    for t in range(len(year)):
+    for t in range(len(new_year)):
 
         # Make the month string consistent with the file convention
-        if int(month[t]) < 10:
-            month_str = '0' + str(month[t])
-        elif int(month[t]) >= 10:
-            month_str = str(month[t])
+        if int(new_month[t]) < 10:
+            month_str = '0' + str(new_month[t])
+        elif int(new_month[t]) >= 10:
+            month_str = str(new_month[t])
 
         altimetry_file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' \
-            + str(year[t]) + '/Anomalies/' + str(year[t]) + month_str + '_DOT_anomaly.nc'
+            + str(new_year[t]) + '/Anomalies/' + str(new_year[t]) + month_str + '_DOT_anomaly.nc'
+        if np.isfinite(new_bpr[t]):
+            if os.path.exists(altimetry_file):
+                nc = Dataset(altimetry_file, 'r')
+                lat = nc.variables['latitude'][:]
+                lon = nc.variables['longitude'][:]
+                dot_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly'][:]
+                dot_2_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
+                nc.close()
+            else:
+                dot_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+                dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+        else:
+            dot_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+            dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
 
-        nc = Dataset(altimetry_file, 'r')
-        lat = nc.variables['latitude'][:]
-        lon = nc.variables['longitude'][:]
-        dot_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly'][:]
-        nc.close()
-
-    # Calculate the correlation between the time series and the altimetry data
+    ## Calculate the correlation between the time series and the altimetry data
     dot_anom_xcorr = np.full((59, 361), fill_value=np.NaN)
     dot_anom_xcorr_pvalues = np.full((59, 361), fill_value=np.NaN)
+    dot_2_anom_xcorr = np.full((59, 361), fill_value=np.NaN)
+    dot_2_anom_xcorr_pvalues = np.full((59, 361), fill_value=np.NaN)
 
     for ilat in range(len(lat)):
         for ilon in range(len(lon)):
             # If there are nans in the altimetry data
-            if np.any(np.isfinite(dot_anom_ts[ilat, ilon, :])):
-                xcorr = stats.spearmanr(funct.inpaint_nans(dot_anom_ts[ilat, ilon, :]), bpr)
+            if np.sum(np.isfinite(dot_anom_ts[ilat, ilon, :])) > len(dot_anom_ts[ilat, ilon, :]) // 2:
+                xcorr = stats.spearmanr(dot_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
                 dot_anom_xcorr[ilat, ilon] = xcorr[0]
                 dot_anom_xcorr_pvalues[ilat, ilon] = xcorr[1]
+                xcorr_2 = stats.spearmanr(dot_2_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
+                dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
+                dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
 
     pl.figure()
     pl.clf()
@@ -86,11 +134,11 @@ for station_name  in  ['AntBasePrat_bpr', 'Argentine_Islands_tide_gauge',
         
     grid_lats, grid_lons = np.meshgrid(lat, lon)
     stereo_x, stereo_y = m(grid_lons, grid_lats)
-        
+    
     m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr)), cmap='RdBu_r')
     m.colorbar()
     pl.clim(1, -1)
-    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_pvalues)), [0.1], color='k')
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_pvalues)), [0.2], color='k')
 
     location_x, location_y = m(station_lon, station_lat)
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
@@ -99,3 +147,36 @@ for station_name  in  ['AntBasePrat_bpr', 'Argentine_Islands_tide_gauge',
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation.png',
         transparent=True, dpi=300)
     pl.close()
+    
+    pl.figure()
+    pl.clf()
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    m.drawmapboundary()
+    m.drawcoastlines(zorder=10)
+    m.fillcontinents(zorder=10)
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+        
+    grid_lats, grid_lons = np.meshgrid(lat, lon)
+    stereo_x, stereo_y = m(grid_lons, grid_lats)
+    
+    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr)), cmap='RdBu_r')
+    m.colorbar()
+    pl.clim(1, -1)
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.2], color='k')
+
+    location_x, location_y = m(station_lon, station_lat)
+    m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
+
+    pl.title('CryoSat-2 Altimetry (no offset) and ' + station_name.replace('_', ' ') + ' Correlation')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_no_offset.png',
+        transparent=True, dpi=300)
+    pl.close()
+
+pl.legend(loc='best', prop={'size':6})
+pl.ylabel('Sea level anomaly (m)')
+pl.xticks(rotation='vertical')
+fig.autofmt_xdate()
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/in_situ_ts.png',
+    transparent=True, dpi=300)
+pl.close()
