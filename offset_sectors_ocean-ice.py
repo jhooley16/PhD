@@ -73,7 +73,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
                 
                 for point in range(len(tracker_type)):
                     if tracker_type[point] == 1 and surface[point] == '1':
-                        ssha[point] += funct.apply_offset(month, 'SAR')
+                        ssha[point] += -0.00962962551012
 
                 # Find the boundaries
                 iedge_ocean_ice = []
@@ -161,7 +161,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.title(year + ' ocean - ice (SAR) histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_ocean_ice_offset_hist.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/' + year + '_ocean_ice_offset_hist.png', format='png')
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
@@ -177,12 +177,12 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_ocean_ice_offset_sectors.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/' + year + '_ocean_ice_offset_sectors.png', format='png')
     pl.close()
 
     average_circumpolar_offset_ocean_ice += np.array(monthly_offset_ocean_ice)
 
-f=open('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/ocean_ice_timeseries.txt', 'w')
+f=open('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/ocean_ice_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_ocean_ice)):
     print(WEDD_timeseries_ocean_ice[i], IND_timeseries_ocean_ice[i], ROSS_timeseries_ocean_ice[i], AMBEL_timeseries_ocean_ice[i], timeseries_ocean_ice[i], file=f)
 f.close()
@@ -193,10 +193,11 @@ pl.plot(WEDD_timeseries_ocean_ice, label='Weddell', marker='.')
 pl.plot(IND_timeseries_ocean_ice, label='Indian', marker='.')
 pl.plot(ROSS_timeseries_ocean_ice, label='Ross', marker='.')
 pl.plot(AMBEL_timeseries_ocean_ice, label='Amundsen-Bellingshausen', marker='.')
+pl.legend(loc='best', prop={'size':6})
 pl.title('ocean - ice (m) (SAR) offset timeseries')
 pl.xlabel('Month (from Jan 2011)')
 pl.ylabel('ocean - ice (m) (SAR) offset')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/ocean_ice_timeseries.png', format='png')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/ocean_ice_timeseries.png', format='png')
 pl.close()
 
 average_circumpolar_offset_ocean_ice /= 5
@@ -229,3 +230,8 @@ print('December ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[
 #November ocean-ice (SAR) offset:  0.0504626853533
 #December ocean-ice (SAR) offset:  0.04950011136
 
+## Calculate the average offset for use as a constant (time) offset
+constant_ocean_ice_offset = np.nanmean(timeseries_ocean_ice)
+print('Constant ocean-ice (SAR) offset: ', constant_ocean_ice_offset)
+
+#Constant ocean-ice (SAR) offset:  0.0561588967006

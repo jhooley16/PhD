@@ -20,9 +20,10 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc.close()
 
             # Filter the DOT with a 800km gaussian filter
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography" -D4 -Fg500 -Nr -f0y -f1x -GDOT_filt.nc')
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_seasonal_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_filt.nc')
             os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_no_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_2_filt.nc')
-
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_constant_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_3_filt.nc')
+            
             # Open the filtered data
             nc = Dataset('DOT_filt.nc', 'r')
             dot_filt = np.array(nc.variables['z'][:])
@@ -30,6 +31,10 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             
             nc = Dataset('DOT_2_filt.nc', 'r')
             dot_2_filt = np.array(nc.variables['z'][:])
+            nc.close()
+            
+            nc = Dataset('DOT_3_filt.nc', 'r')
+            dot_3_filt = np.array(nc.variables['z'][:])
             nc.close()
 
             os.system('gmt grdfilter ' + year + month + '_DOT.nc?"sea_ice_concentration" -D4 -Fg1000 -Ni -f0y -f1x -GICE_filt.nc')
@@ -65,15 +70,17 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             latitudes = nc.createVariable('latitude', float, ('lat',))
             longitudes = nc.createVariable('longitude', float, ('lon',))
-            sea_surface_height = nc.createVariable('dynamic_ocean_topography', float, ('lat','lon'))
+            sea_surface_height = nc.createVariable('dynamic_ocean_topography_seasonal_offset', float, ('lat','lon'))
             sea_surface_height_2 = nc.createVariable('dynamic_ocean_topography_no_offset', float, ('lat','lon'))
+            sea_surface_height_3 = nc.createVariable('dynamic_ocean_topography_constant_offset', float, ('lat','lon'))
             sea_ice_concentration = nc.createVariable('sea_ice_concentration', float, ('lat', 'lon'))
         
             latitudes[:] = lat
             longitudes[:] = lon
             sea_surface_height[:] = dot_filt
             sea_surface_height_2[:] = dot_2_filt
+            sea_surface_height_3[:] = dot_3_filt
             sea_ice_concentration[:] = ice_filt
             nc.close()
             
-            os.system('rm DOT_filt.nc DOT_2_filt.nc ICE_filt.nc')
+            os.system('rm DOT_filt.nc DOT_2_filt.nc DOT_3_filt.nc ICE_filt.nc')

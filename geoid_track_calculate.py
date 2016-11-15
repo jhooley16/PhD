@@ -19,9 +19,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc = Dataset(raw_file, 'r')
             lat = nc.variables['latitude'][:]
             lon = nc.variables['longitude'][:]
-            ssh = nc.variables['sea_surface_height'][:]
             nc.close()
-            print(type(ssh))
             # Construct a two column ascii table for the location of points
 
             input_file = open('/Users/jmh2g09/Documents/PhD/Geoid/INPUT.txt', 'w')

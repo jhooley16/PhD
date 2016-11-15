@@ -160,7 +160,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.title(year + ' LRM - SAR histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_LRM_SAR_offset_hist.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/' + year + '_LRM_SAR_offset_hist.png', format='png')
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
@@ -170,17 +170,17 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.plot(A, monthly_offset_IND_LRM_SAR, label='Indian', marker='.')
     pl.plot(A, monthly_offset_ROSS_LRM_SAR, label='Ross', marker='.')
     pl.plot(A, monthly_offset_AMBEL_LRM_SAR, label='Amundsen-Bellingshausen', marker='.')
-    pl.legend(loc='top')
+    pl.legend(loc='Best')
     pl.title(year + ' LRM - SAR (m) offset')
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/' + year + '_LRM_SAR_offset_sectors.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/' + year + '_LRM_SAR_offset_sectors.png', format='png')
     pl.close()
     
     average_circumpolar_offset_LRM_SAR += np.array(monthly_offset_LRM_SAR)
 
-f=open('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/LRM_SAR_timeseries.txt', 'w')
+f=open('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/LRM_SAR_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_LRM_SAR)):
     print(WEDD_timeseries_LRM_SAR[i], IND_timeseries_LRM_SAR[i], ROSS_timeseries_LRM_SAR[i], AMBEL_timeseries_LRM_SAR[i], timeseries_LRM_SAR[i], file=f)
 f.close()
@@ -191,10 +191,11 @@ pl.plot(WEDD_timeseries_LRM_SAR, label='Weddell', marker='.')
 pl.plot(IND_timeseries_LRM_SAR, label='Indian', marker='.')
 pl.plot(ROSS_timeseries_LRM_SAR, label='Ross', marker='.')
 pl.plot(AMBEL_timeseries_LRM_SAR, label='Amundsen-Bellingshausen', marker='.')
+pl.legend(loc='best', prop={'size':6})
 pl.title('LRM - SAR (m) offset timeseries')
 pl.xlabel('Month (from Jan 2011)')
 pl.ylabel('LRM - SAR (m) offset')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Figures/LRMSAR_timeseries.png', format='png')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/LRMSAR_timeseries.png', format='png')
 pl.close()
 
 average_circumpolar_offset_LRM_SAR /= 5
@@ -226,3 +227,9 @@ print('December LRM-SAR offset: ', average_circumpolar_offset_LRM_SAR[11])
 #October LRM-SAR offset:  -0.0174250239166
 #November LRM-SAR offset:  0.00133077159719
 #December LRM-SAR offset:  0.0124794197335
+
+## Calculate the average offset for use as a constant (time) offset
+constant_LRM_SAR_offset = np.nanmean(timeseries_LRM_SAR)
+print('Constant LRM-SAR offset: ', constant_LRM_SAR_offset)
+
+#Constant LRM-SAR offset:  -0.00962962551012

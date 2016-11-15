@@ -17,6 +17,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             lon = data['lon']
             ssh = data['ssh']
             ssh_2 = data['ssh_2']
+            ssh_3 = data['ssh_3']
             ice_conc = data['ice_conc']
             surface_type = data['type']
             print('Data Extracted')
@@ -46,11 +47,11 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             latitudes = nc.createVariable('latitude', float, ('station',))
             longitudes = nc.createVariable('longitude', float, ('station',))
-            sea_surface_height = nc.createVariable('sea_surface_height', float, ('station',))
+            sea_surface_height = nc.createVariable('sea_surface_height_seasonal_offset', float, ('station',))
             sea_surface_height_2 = nc.createVariable('sea_surface_height_no_offset', float, ('station',))
+            sea_surface_height_3 = nc.createVariable('sea_surface_height_constant_offset', float, ('station',))
             surface = nc.createVariable('surface_type', 'i', ('station',))
             sea_ice_concentration = nc.createVariable('ice_concentration', float, ('station',))
-            crs = nc.createVariable('crs', 'i', ())
     
             latitudes.long_name = 'latitude'
             latitudes.standard_name = 'latitude'
@@ -65,7 +66,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             sea_ice_concentration.long_name = 'sea_ice_concentration'
             sea_ice_concentration.units = '%'
             sea_ice_concentration.grid_mapping = 'crs'
-            sea_surface_height.standard_name = 'sea_surface_height_above_WGS84_ellipsoid'
+            sea_surface_height.standard_name = 'sea_surface_height_above_WGS84_ellipsoid_seasonal_offset_correction'
             sea_surface_height.long_name = 'sea_surface_height'
             sea_surface_height.units = 'm'
             sea_surface_height.grid_mapping = 'crs'
@@ -75,17 +76,17 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             sea_surface_height_2.units = 'm'
             sea_surface_height_2.grid_mapping = 'crs'
             sea_surface_height_2.tide_system = 'tide_free'
-    
-            crs.grid_mapping_name = 'latitude_longitude'
-            crs.semi_major_axis = 6378137.
-            crs.inverse_flattening = 298.257222101004
-            crs.earth_gravity_constant = 398600500000000.
-            crs.earth_rotation_rate = 7.292115e-05
+            sea_surface_height_3.standard_name = 'sea_surface_height_above_WGS84_ellipsoid_constant_offset_correction'
+            sea_surface_height_3.long_name = 'sea_surface_height'
+            sea_surface_height_3.units = 'm'
+            sea_surface_height_3.grid_mapping = 'crs'
+            sea_surface_height_3.tide_system = 'tide_free'
 
             latitudes[:] = lat
             longitudes[:] = lon
             sea_surface_height[:] = ssh
             sea_surface_height_2[:] = ssh_2
+            sea_surface_height_3[:] = ssh_3
             surface[:] = surface_type
             sea_ice_concentration[:] = ice_conc
     

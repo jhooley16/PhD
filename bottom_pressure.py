@@ -11,10 +11,9 @@ from mpl_toolkits.basemap import Basemap
 ## Create a bottom pressure/tide gauge - CS2 correlation map
 
 # Load the bottom pressure data
+M = 1
 fig = pl.figure()
-for station_name  in  ['Argentine_Islands_tide_gauge', 'DrakePassageNorthDeep_bpr', 
-    'DrakePassageSouthDeep_bpr', 'DrakePassageSouth_bpr',
-    'Syowa_station_tide_gauge']:#'DrakePassageNorth_bpr','AntBasePrat_tide_gauge',]:
+for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','DrakePassageNorthDeep_bpr']:#,'Argentine_Islands_tide_gauge','Syowa_station_tide_gauge']:
 
     pressure_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/' + station_name + '_corrected_monthly.csv'
 
@@ -72,14 +71,15 @@ for station_name  in  ['Argentine_Islands_tide_gauge', 'DrakePassageNorthDeep_bp
             station_lon = float(columns[2])
     f.close()
 
-    pl.plot(dates, new_bpr, label=station_name)
-
+    pl.plot(dates, new_bpr - (M * 0.1), label=station_name)
+    M += 1
     
     # Load the altimetry data for the timeseries defined by the bottom
     # pressure/tide gauge record
 
     dot_anom_ts = np.zeros((59, 361, len(new_year)))
     dot_2_anom_ts = np.zeros((59, 361, len(new_year)))
+    dot_3_anom_ts = np.zeros((59, 361, len(new_year)))
 
     for t in range(len(new_year)):
 
@@ -96,21 +96,26 @@ for station_name  in  ['Argentine_Islands_tide_gauge', 'DrakePassageNorthDeep_bp
                 nc = Dataset(altimetry_file, 'r')
                 lat = nc.variables['latitude'][:]
                 lon = nc.variables['longitude'][:]
-                dot_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly'][:]
+                dot_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:]
                 dot_2_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
+                dot_3_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_constant_offset'][:]
                 nc.close()
             else:
                 dot_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
                 dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+                dot_3_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
         else:
             dot_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
             dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+            dot_3_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
 
     ## Calculate the correlation between the time series and the altimetry data
     dot_anom_xcorr = np.full((59, 361), fill_value=np.NaN)
     dot_anom_xcorr_pvalues = np.full((59, 361), fill_value=np.NaN)
     dot_2_anom_xcorr = np.full((59, 361), fill_value=np.NaN)
     dot_2_anom_xcorr_pvalues = np.full((59, 361), fill_value=np.NaN)
+    dot_3_anom_xcorr = np.full((59, 361), fill_value=np.NaN)
+    dot_3_anom_xcorr_pvalues = np.full((59, 361), fill_value=np.NaN)
 
     for ilat in range(len(lat)):
         for ilon in range(len(lon)):
@@ -122,6 +127,9 @@ for station_name  in  ['Argentine_Islands_tide_gauge', 'DrakePassageNorthDeep_bp
                 xcorr_2 = stats.spearmanr(dot_2_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
                 dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
                 dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
+                xcorr_3 = stats.spearmanr(dot_3_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
+                dot_3_anom_xcorr[ilat, ilon] = xcorr_3[0]
+                dot_3_anom_xcorr_pvalues[ilat, ilon] = xcorr_3[1]
 
     pl.figure()
     pl.clf()
@@ -172,11 +180,85 @@ for station_name  in  ['Argentine_Islands_tide_gauge', 'DrakePassageNorthDeep_bp
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_no_offset.png',
         transparent=True, dpi=300)
     pl.close()
+    
+    pl.figure()
+    pl.clf()
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    m.drawmapboundary()
+    m.drawcoastlines(zorder=10)
+    m.fillcontinents(zorder=10)
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+        
+    grid_lats, grid_lons = np.meshgrid(lat, lon)
+    stereo_x, stereo_y = m(grid_lons, grid_lats)
+    
+    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_3_anom_xcorr)), cmap='RdBu_r')
+    m.colorbar()
+    pl.clim(1, -1)
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_3_anom_xcorr_pvalues)), [0.2], color='k')
+
+    location_x, location_y = m(station_lon, station_lat)
+    m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
+
+    pl.title('CryoSat-2 Altimetry (constant offset) and ' + station_name.replace('_', ' ') + ' Correlation')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_constant_offset.png',
+        transparent=True, dpi=300)
+    pl.close()
+    
+    pl.figure()
+    pl.clf()
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    m.drawmapboundary()
+    m.drawcoastlines(zorder=10)
+    m.fillcontinents(zorder=10)
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+        
+    grid_lats, grid_lons = np.meshgrid(lat, lon)
+    stereo_x, stereo_y = m(grid_lons, grid_lats)
+    
+    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr)) - np.transpose(np.ma.masked_invalid(dot_3_anom_xcorr)), cmap='RdBu_r')
+    m.colorbar()
+    pl.clim(.1, -.1)
+    location_x, location_y = m(station_lon, station_lat)
+    m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
+    pl.title('CS-2 and ' + station_name.replace('_', ' ') + ' seasonal - constant offset')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_seasonal-constant_offset.png',
+        transparent=True, dpi=300)
+    pl.close()
+
+DOT_dates = []
+timeseries = []
+timeseries_2 = []
+timeseries_3 = []
+f = open('/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/DOT_SAMarea_ts.csv', 'r')
+for line in f:
+    line = line.strip()
+    columns = line.split(' ')
+    DOT_dates.append(date(int(columns[0]), int(columns[1]), 15))
+    timeseries.append(float(columns[2]))
+    timeseries_2.append(float(columns[3]))
+    timeseries_3.append(float(columns[4]))
+f.close()
+
+sam_index = []
+f = open('/Users/jmh2g09/Documents/PhD/Data/Wind/SAM_2010-2016.txt', 'r')
+for line in f:
+    line = line.strip()
+    sam_index.append(float(line))
+f.close()
+
+pl.plot(DOT_dates, timeseries, label='DOT timeseries (seasonal offset)', ls='-.')
+#pl.plot(DOT_dates, np.array(timeseries_2) + 0.1, label='DOT timeseries (no offset)', ls='-.')
+#pl.plot(DOT_dates, np.array(timeseries_3) + 0.2, label='DOT timeseries (constant offset)', ls='-.')
+pl.plot(DOT_dates, ( - np.array(sam_index) / 100) + 0.1, label='-SAM index / 100', ls='-.')
 
 pl.legend(loc='best', prop={'size':6})
 pl.ylabel('Sea level anomaly (m)')
 pl.xticks(rotation='vertical')
 fig.autofmt_xdate()
+#pl.ylim([-0.2, 0.2])
 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/in_situ_ts.png',
     transparent=True, dpi=300)
 pl.close()

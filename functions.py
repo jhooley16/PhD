@@ -16,6 +16,7 @@ def month_data(directory, month):
     lon = []
     ssh = []
     ssh_2 = []
+    ssh_3 = []
     type = []
     ice_conc = []
     for file in files:
@@ -24,30 +25,21 @@ def month_data(directory, month):
         lon_sub = []
         ssh_sub = []
         ssh_2_sub = []
+        ssh_3_sub = []
         type_sub = []
         ice_conc_sub = []
         lat_sub_asc = []
         lon_sub_asc = []
         ssh_sub_asc = []
         ssh_sub_2_asc = []
+        ssh_sub_3_asc = []
         type_sub_asc = []
         ice_conc_sub_asc = []
         lat_sub_desc = []
         lon_sub_desc = []
         ssh_sub_desc = []
         ssh_sub_2_desc = []
-        ssh_filt_desc = []
-        lat_sub_desc_new = []
-        lon_sub_desc_new = []
-        ssh_2_filt_desc = []
-        type_sub_desc_new = []
-        ice_conc_sub_desc_new = []
-        ssh_2_filt_asc = []
-        lon_sub_asc_new = []
-        type_sub_asc_new = []
-        ice_conc_sub_asc_new = []
-        ssh_filt_asc = []
-        lat_sub_asc_new = []
+        ssh_sub_3_desc = []
         type_sub_desc = []
         ice_conc_sub_desc = []
         f = open(file, 'r')
@@ -66,6 +58,7 @@ def month_data(directory, month):
                         type_sub.append(float(columns[0]))
                         ssh_sub.append(float(columns[7]))
                         ssh_2_sub.append(float(columns[7]))
+                        ssh_3_sub.append(float(columns[7]))
         
         # Identify the surface and tracker and apply the necessary offset
         # Generate a list of the retracker used at each point
@@ -74,9 +67,11 @@ def month_data(directory, month):
             # If the point is SAR and Ocean
             if mode[point] == 1 and type_sub[point] == 1:
                 ssh_sub[point] += apply_offset(month, 'SAR_ocean')
+                ssh_3_sub[point] += apply_offset('constant', 'SAR_ocean')
             # If the point is SAR or SARIn and Lead
             elif (mode[point] == 1 or mode[point] == 2) and type_sub[point] == 2:
                 ssh_sub[point] += apply_offset(month, 'ice')
+                ssh_3_sub[point] += apply_offset('constant', 'ice')
         f.close()
         
         if len(lat_sub) > 3:
@@ -86,6 +81,7 @@ def month_data(directory, month):
             if len(descending) > 0.:
                 ssh_sub_desc = ssh_sub[descending[0]:descending[-1]]
                 ssh_sub_2_desc = ssh_2_sub[descending[0]:descending[-1]]
+                ssh_sub_3_desc = ssh_3_sub[descending[0]:descending[-1]]
                 lat_sub_desc = lat_sub[descending[0]:descending[-1]]
                 lon_sub_desc = lon_sub[descending[0]:descending[-1]]
                 ice_conc_sub_desc = ice_conc_sub[descending[0]:descending[-1]]
@@ -106,29 +102,25 @@ def month_data(directory, month):
                 for bad in sorted(np.unique(bad_elements), reverse=True):
                     del ssh_sub_desc[bad]
                     del ssh_sub_2_desc[bad]
+                    del ssh_sub_3_desc[bad]
                     del lat_sub_desc[bad]
                     del lon_sub_desc[bad]
                     del ice_conc_sub_desc[bad]
                     del type_sub_desc[bad]
                 
-                #ssh_sub_desc = np.array(ssh_sub_desc)
-                #ssh_sub_desc = list(ssh_sub_desc[np.argsort(lat_sub_desc)])
-                #ssh_sub_2_desc = np.array(ssh_sub_2_desc)
-                #ssh_sub_2_desc = list(ssh_sub_2_desc[np.argsort(lat_sub_desc)])
-                #ice_conc_sub_desc = np.array(ice_conc_sub_desc)
-                #ice_conc_sub_desc = list(ice_conc_sub_desc[np.argsort(lat_sub_desc)])
-                #lat_sub_desc = sorted(lat_sub_desc)
-                
                 ## Filter the track
                 input_ssh = open('../INPUT_ssh.dat', 'w')
                 input_ssh2 = open('../INPUT_ssh2.dat', 'w')
+                input_ssh3 = open('../INPUT_ssh3.dat', 'w')
                 input_ice = open('../INPUT_ice.dat', 'w')
                 for ilat in range(len(lat_sub_desc)):
                     print(-lat_sub_desc[ilat], ssh_sub_desc[ilat], file=input_ssh)
                     print(-lat_sub_desc[ilat], ssh_sub_2_desc[ilat], file=input_ssh2)
+                    print(-lat_sub_desc[ilat], ssh_sub_3_desc[ilat], file=input_ssh3)
                     print(-lat_sub_desc[ilat], ice_conc_sub_desc[ilat], file=input_ice)
                 input_ssh.close()
                 input_ssh2.close()
+                input_ssh3.close()
                 input_ice.close()
                 
                 #pl.figure()
@@ -136,9 +128,10 @@ def month_data(directory, month):
                 
                 os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
                 os.system('gmt filter1d ../INPUT_ssh2.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh2.dat')
+                os.system('gmt filter1d ../INPUT_ssh3.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh3.dat')
                 os.system('gmt filter1d ../INPUT_ice.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
                 
-                os.system('rm ../INPUT_ssh.dat ../INPUT_ssh2.dat ../INPUT_ice.dat')
+                os.system('rm ../INPUT_ssh.dat ../INPUT_ssh2.dat ../INPUT_ssh3.dat ../INPUT_ice.dat')
                 
                 output_ssh = open('../OUTPUT_ssh.dat', 'r')
                 lat_sub_desc = []
@@ -151,26 +144,30 @@ def month_data(directory, month):
                 output_ssh.close()
                 
                 output_ssh2 = open('../OUTPUT_ssh2.dat', 'r')
-                lat_sub_desc = []
                 ssh_sub_2_desc = []
                 for line in output_ssh2:
                     line.strip()
                     columns = line.split()
-                    lat_sub_desc.append(-float(columns[0]))
                     ssh_sub_2_desc.append(float(columns[1]))
                 output_ssh2.close()
                 
+                output_ssh3 = open('../OUTPUT_ssh3.dat', 'r')
+                ssh_sub_3_desc = []
+                for line in output_ssh3:
+                    line.strip()
+                    columns = line.split()
+                    ssh_sub_3_desc.append(float(columns[1]))
+                output_ssh3.close()
+                
                 output_ice = open('../OUTPUT_ice.dat', 'r')
-                lat_sub_desc = []
                 ice_conc_sub_desc = []
                 for line in output_ice:
                     line.strip()
                     columns = line.split()
-                    lat_sub_desc.append(-float(columns[0]))
                     ice_conc_sub_desc.append(float(columns[1]))
                 output_ice.close()
                 
-                os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ssh2.dat ../OUTPUT_ice.dat')
+                os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ssh2.dat ../OUTPUT_ssh3.dat ../OUTPUT_ice.dat')
                 
                 #pl.plot(lat_sub_desc, ssh_sub_desc, 'r')
                 #pl.title('DESC')
@@ -184,12 +181,14 @@ def month_data(directory, month):
                     ice_conc += ice_conc_sub_desc
                     ssh += ssh_sub_desc
                     ssh_2 += ssh_sub_2_desc
+                    ssh_3 += ssh_sub_3_desc
 
             ascending = np.where(np.gradient(lat_sub) > 0.)[0]
             # If there are any ascending tracks
             if len(ascending) > 0.:
                 ssh_sub_asc = ssh_sub[ascending[1]:ascending[-1]]
                 ssh_sub_2_asc = ssh_2_sub[ascending[1]:ascending[-1]]
+                ssh_sub_3_asc = ssh_3_sub[ascending[1]:ascending[-1]]
                 lat_sub_asc = lat_sub[ascending[1]:ascending[-1]]
                 lon_sub_asc = lon_sub[ascending[1]:ascending[-1]]
                 ice_conc_sub_asc = ice_conc_sub[ascending[1]:ascending[-1]]
@@ -209,29 +208,25 @@ def month_data(directory, month):
                 for bad in sorted(np.unique(bad_elements), reverse=True):
                     del ssh_sub_asc[bad]
                     del ssh_sub_2_asc[bad]
+                    del ssh_sub_3_asc[bad]
                     del lat_sub_asc[bad]
                     del lon_sub_asc[bad]
                     del ice_conc_sub_asc[bad]
                     del type_sub_asc[bad]
                 
-                #ssh_sub_asc = np.array(ssh_sub_asc)
-                #ssh_sub_asc = list(ssh_sub_asc[np.argsort(lat_sub_asc)])
-                #ssh_sub_2_asc = np.array(ssh_sub_2_asc)
-                #ssh_sub_2_asc = list(ssh_sub_2_asc[np.argsort(lat_sub_asc)])
-                #ice_conc_sub_asc = np.array(ice_conc_sub_asc)
-                #ice_conc_sub_asc = list(ice_conc_sub_asc[np.argsort(lat_sub_asc)])
-                #lat_sub_asc = sorted(lat_sub_asc)
-                
                 ## Filter the track
                 input_ssh = open('../INPUT_ssh.dat', 'w')
                 input_ssh2 = open('../INPUT_ssh2.dat', 'w')
+                input_ssh3 = open('../INPUT_ssh3.dat', 'w')
                 input_ice = open('../INPUT_ice.dat', 'w')
                 for ilat in range(len(lat_sub_asc)):
                     print(lat_sub_asc[ilat], ssh_sub_asc[ilat], file=input_ssh)
                     print(lat_sub_asc[ilat], ssh_sub_2_asc[ilat], file=input_ssh2)
+                    print(lat_sub_asc[ilat], ssh_sub_3_asc[ilat], file=input_ssh3)
                     print(lat_sub_asc[ilat], ice_conc_sub_asc[ilat], file=input_ice)
                 input_ssh.close()
                 input_ssh2.close()
+                input_ssh3.close()
                 input_ice.close()
                 
                 #pl.figure()
@@ -239,9 +234,10 @@ def month_data(directory, month):
                 
                 os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
                 os.system('gmt filter1d ../INPUT_ssh2.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh2.dat')
+                os.system('gmt filter1d ../INPUT_ssh3.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh3.dat')
                 os.system('gmt filter1d ../INPUT_ice.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
                 
-                os.system('rm ../INPUT_ssh.dat ../INPUT_ssh2.dat ../INPUT_ice.dat')
+                os.system('rm ../INPUT_ssh.dat ../INPUT_ssh2.dat ../INPUT_ssh3.dat ../INPUT_ice.dat')
                 
                 output_ssh = open('../OUTPUT_ssh.dat', 'r')
                 lat_sub_asc = []
@@ -254,41 +250,46 @@ def month_data(directory, month):
                 output_ssh.close()
                 
                 output_ssh2 = open('../OUTPUT_ssh2.dat', 'r')
-                lat_sub_asc = []
                 ssh_sub_2_asc = []
                 for line in output_ssh2:
                     line.strip()
                     columns = line.split()
-                    lat_sub_asc.append(float(columns[0]))
                     ssh_sub_2_asc.append(float(columns[1]))
                 output_ssh2.close()
                 
+                output_ssh3 = open('../OUTPUT_ssh3.dat', 'r')
+                ssh_sub_3_asc = []
+                for line in output_ssh3:
+                    line.strip()
+                    columns = line.split()
+                    ssh_sub_3_asc.append(float(columns[1]))
+                output_ssh3.close()
+                
                 output_ice = open('../OUTPUT_ice.dat', 'r')
-                lat_sub_asc = []
                 ice_conc_sub_asc = []
                 for line in output_ice:
                     line.strip()
                     columns = line.split()
-                    lat_sub_asc.append(float(columns[0]))
                     ice_conc_sub_asc.append(float(columns[1]))
                 output_ice.close()
                 
-                os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ssh2.dat ../OUTPUT_ice.dat')
+                os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ssh2.dat ../OUTPUT_ssh3.dat ../OUTPUT_ice.dat')
                 
                 #pl.plot(lat_sub_asc, ssh_sub_asc, 'r')
                 #pl.title('ASC')
                 #pl.show()
                 #pl.close()
                 
-                if len(lat_sub_desc) == len(lon_sub_desc):
+                if len(lat_sub_asc) == len(lon_sub_asc):
                     lat += lat_sub_asc
                     lon += lon_sub_asc
                     type += type_sub_asc
                     ice_conc += ice_conc_sub_asc
                     ssh += ssh_sub_asc
                     ssh_2 += ssh_sub_2_asc
+                    ssh_3 += ssh_sub_3_asc
 
-    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ssh_2': ssh_2, 'ice_conc': ice_conc, 'type': type}
+    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ssh_2': ssh_2, 'ssh_3': ssh_3, 'ice_conc': ice_conc, 'type': type}
 
 def stereo(lat, lon):
     """Convert Lat and Lon (Polar) coordinates to stereographic (x, y) coordinates (km).
@@ -400,6 +401,8 @@ def apply_offset(month, boundary):
             return 0.001
         elif month == '12':
             return 0.012
+        elif month == 'constant':
+            return -0.010
     elif boundary == 'ice':
         if month == '01':
             return 0.052
@@ -425,6 +428,8 @@ def apply_offset(month, boundary):
             return 0.050
         elif month == '12':
             return 0.050
+        elif month == 'constant':
+            return 0.056
 #January LRM-SAR offset:  0.00489492491322
 #Febuary LRM-SAR offset:  0.00688199790682
 #March LRM-SAR offset:  -0.00897106525092
@@ -481,11 +486,11 @@ def mode_points(lat, lon, month):
         return inside
 
     # Load the polygon data
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Mode Mask/SARIn_polygon.nc', 'r')
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/ModeMask/SARIn_polygon.nc', 'r')
     lat_poly_SARIn = nc.variables['Lat_SARIn'][:]
     lon_poly_SARIn = nc.variables['Lon_SARIn'][:]
     nc.close()
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Seperate Modes/Mode Mask/SAR_polygon.nc', 'r')
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/ModeMask/SAR_polygon.nc', 'r')
     lat_poly_SAR = nc.variables['Lat_SAR_' + month][:]
     lon_poly_SAR = nc.variables['Lon_SAR_' + month][:]
     nc.close()

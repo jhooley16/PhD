@@ -21,8 +21,9 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             if file == year + month + '_raw.nc':
                 file_exists = True
                 nc_ssh = Dataset(file, 'r')
-                sea_surface_height = nc_ssh.variables['sea_surface_height'][:]
+                sea_surface_height = nc_ssh.variables['sea_surface_height_seasonal_offset'][:]
                 sea_surface_height_2 = nc_ssh.variables['sea_surface_height_no_offset'][:]
+                sea_surface_height_3 = nc_ssh.variables['sea_surface_height_constant_offset'][:]
                 ice_conc = nc_ssh.variables['ice_concentration'][:]
                 nc_ssh.close()
                 
@@ -30,6 +31,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             print(year, month)
             dot = sea_surface_height - geoid_height
             dot_2 = sea_surface_height_2 - geoid_height
+            dot_3 = sea_surface_height_3 - geoid_height
             
             pl.figure()
             pl.clf()
@@ -51,8 +53,9 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc_dot.createDimension('station', np.size(lat))
             latitudes = nc_dot.createVariable('latitude', float, ('station',))
             longitudes = nc_dot.createVariable('longitude', float, ('station',))
-            dynamic_ocean_topography = nc_dot.createVariable('dynamic_ocean_topography', float, ('station',))
+            dynamic_ocean_topography = nc_dot.createVariable('dynamic_ocean_topography_seasonal_offset', float, ('station',))
             dynamic_ocean_topography_2 = nc_dot.createVariable('dynamic_ocean_topography_no_offset', float, ('station',))
+            dynamic_ocean_topography_3 = nc_dot.createVariable('dynamic_ocean_topography_constant_offset', float, ('station',))
             sea_ice_concentration = nc_dot.createVariable('sea_ice_concentration', float, ('station',))
 
             latitudes.long_name = 'latitude'
@@ -61,12 +64,15 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             longitudes.long_name = 'longitude'
             longitudes.standard_name = 'longitude'
             longitudes.units = 'degrees_east'
-            dynamic_ocean_topography.long_name = 'dynamic_ocean_topography'
+            dynamic_ocean_topography.long_name = 'dynamic_ocean_topography_seasonal_offset'
             dynamic_ocean_topography.standard_name = 'sea_surface_height_above_EGM08_geoid'
             dynamic_ocean_topography.units = 'm'
             dynamic_ocean_topography_2.long_name = 'dynamic_ocean_topography_no_offset'
             dynamic_ocean_topography_2.standard_name = 'sea_surface_height_above_EGM08_geoid_no_retracker_offset'
             dynamic_ocean_topography_2.units = 'm'
+            dynamic_ocean_topography_3.long_name = 'dynamic_ocean_topography_constant_offset'
+            dynamic_ocean_topography_3.standard_name = 'sea_surface_height_above_EGM08_geoid_no_retracker_offset'
+            dynamic_ocean_topography_3.units = 'm'
             sea_ice_concentration.long_name = 'sea_ice_concentration'
             sea_ice_concentration.standard_name = 'sea_ice_concentration'
             sea_ice_concentration.units = '%'
@@ -75,6 +81,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             longitudes[:] = lon
             dynamic_ocean_topography[:] = dot
             dynamic_ocean_topography_2[:] = dot_2
+            dynamic_ocean_topography_3[:] = dot_3
             sea_ice_concentration[:] = ice_conc
     
             nc_dot.close()
