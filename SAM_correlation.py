@@ -74,13 +74,22 @@ for ilat in range(len(lat)):
     for ilon in range(len(lon)):
         # If there are nans in the data
         if np.sum(np.isfinite(dot_anom_ts[ilat, ilon, :])) > len(dot_anom_ts[ilat, ilon, :]) // 2:
-            xcorr = stats.spearmanr(dot_anom_ts[ilat, ilon, :], sam_index, nan_policy='omit')
+            
+            its = np.isfinite(dot_anom_ts[ilat, ilon, :])
+            
+            ts_1 = dot_anom_ts[ilat, ilon, its]
+            ts_2 = dot_2_anom_ts[ilat, ilon, its]
+            ts_3 = dot_3_anom_ts[ilat, ilon, its]
+            
+            sam_index_2 = sam_index[its]
+            
+            xcorr = stats.pearsonr(ts_1, sam_index_2)
             dot_anom_xcorr[ilat, ilon] = xcorr[0]
             dot_anom_xcorr_pvalues[ilat, ilon] = xcorr[1]
-            xcorr_2 = stats.spearmanr(dot_2_anom_ts[ilat, ilon, :], sam_index, nan_policy='omit')
+            xcorr_2 = stats.pearsonr(ts_2, sam_index_2)
             dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
             dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
-            xcorr_3 = stats.spearmanr(dot_3_anom_ts[ilat, ilon, :], sam_index, nan_policy='omit')
+            xcorr_3 = stats.pearsonr(ts_3, sam_index_2)
             dot_3_anom_xcorr[ilat, ilon] = xcorr_3[0]
             dot_3_anom_xcorr_pvalues[ilat, ilon] = xcorr_3[1]
 
@@ -202,12 +211,3 @@ f = open('/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/DOT_SAMarea_ts.csv', '
 for it in range(len(timeseries)):
     print(years[it], months[it], timeseries[it], timeseries_2[it], timeseries_3[it], file=f)
 f.close()
-
-pl.figure()
-pl.clf()
-pl.plot(timeseries, label='Seasonal Offset')
-pl.plot(timeseries_2, label='No Offset')
-pl.plot(timeseries_3, label='Constant Offset')
-pl.legend(loc='best')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_test.png', transparent=True, dpi=300)
-pl.close()

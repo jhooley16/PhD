@@ -57,7 +57,14 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
         if np.any(np.logical_and(np.array(year) == new_year[idat], np.array(month) == new_month[idat])):
             ind = np.where(np.logical_and(np.array(year) == new_year[idat], np.array(month) == new_month[idat]))
             new_bpr[idat] = bpr[ind[0][0]]
-
+    
+    ibpr = np.isfinite(new_bpr)
+    
+    new_bpr = new_bpr[ibpr]
+    new_year = np.array(new_year)[ibpr]
+    new_month = np.array(new_month)[ibpr]
+    dates = np.array(dates)[ibpr]
+    
     locations_file = '/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/locations.csv'
 
     # Open the locations (lat, lon) for the stations, to mark on correlation map
@@ -121,13 +128,22 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
         for ilon in range(len(lon)):
             # If there are nans in the altimetry data
             if np.sum(np.isfinite(dot_anom_ts[ilat, ilon, :])) > len(dot_anom_ts[ilat, ilon, :]) // 2:
-                xcorr = stats.spearmanr(dot_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
+                
+                its = np.isfinite(dot_anom_ts[ilat, ilon, :])
+                
+                ts_1 = dot_anom_ts[ilat, ilon, its]
+                ts_2 = dot_2_anom_ts[ilat, ilon, its]
+                ts_3 = dot_3_anom_ts[ilat, ilon, its]
+                
+                new_bpr_2 = new_bpr[its]
+                
+                xcorr = stats.pearsonr(ts_1, new_bpr_2)
                 dot_anom_xcorr[ilat, ilon] = xcorr[0]
                 dot_anom_xcorr_pvalues[ilat, ilon] = xcorr[1]
-                xcorr_2 = stats.spearmanr(dot_2_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
+                xcorr_2 = stats.pearsonr(ts_2, new_bpr_2)
                 dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
                 dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
-                xcorr_3 = stats.spearmanr(dot_3_anom_ts[ilat, ilon, :], new_bpr, nan_policy='omit')
+                xcorr_3 = stats.pearsonr(ts_3, new_bpr_2)
                 dot_3_anom_xcorr[ilat, ilon] = xcorr_3[0]
                 dot_3_anom_xcorr_pvalues[ilat, ilon] = xcorr_3[1]
 
@@ -252,7 +268,7 @@ f.close()
 pl.plot(DOT_dates, timeseries, label='DOT timeseries (seasonal offset)', ls='-.')
 #pl.plot(DOT_dates, np.array(timeseries_2) + 0.1, label='DOT timeseries (no offset)', ls='-.')
 #pl.plot(DOT_dates, np.array(timeseries_3) + 0.2, label='DOT timeseries (constant offset)', ls='-.')
-pl.plot(DOT_dates, ( - np.array(sam_index) / 100) + 0.1, label='-SAM index / 100', ls='-.')
+pl.plot(DOT_dates, ( - np.array(sam_index) / 100) + 0.1, label='- SAM index / 100', ls='-.')
 
 pl.legend(loc='best', prop={'size':6})
 pl.ylabel('Sea level anomaly (m)')
