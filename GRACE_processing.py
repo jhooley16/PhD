@@ -14,8 +14,25 @@ GRACE_lat = nc.variables['lat'][:]
 GRACE_lon = nc.variables['lon'][:]
 GRACE_time = nc.variables['time_bounds'][:]
 # Convert GRACE lwe thickness to m (from cm) 
-GRACE_data_pre = nc.variables['lwe_thickness'][:] / 10 # (time, lat, lon)
+GRACE_data_pre = nc.variables['lwe_thickness'][:] / 10# (time, lat, lon)
 nc.close()
+
+GRACE_lon = np.append(GRACE_lon, 360.5)
+GRACE_data_pre = np.dstack((GRACE_data_pre, GRACE_data_pre[:, :, 0]))
+
+SSP_file = '/Users/jmh2g09/Documents/PhD/Data/SSPressure/ERA_Interim_sea_surface_pressure.nc'
+
+## Load SSP data
+nc = Dataset(SSP_file, 'r')
+SSP_lat = nc.variables['latitude'][:]
+SSP_lon = nc.variables['longitude'][:]
+SSP_time = nc.variables['time'][:] / 24 # Convert to days
+# Convert SSP (Pa) to m of water equivalent
+SSP_data_pre = nc.variables['msl'][:] / (1025*9.81)# (time, lat, lon)
+nc.close()
+
+SSP_lon = np.append(SSP_lon, 360)
+SSP_data_pre = np.dstack((SSP_data_pre, SSP_data_pre[:, :, 0]))
 
 # Mask out missing values (land, etc) 
 GRACE_data_pre[GRACE_data_pre<-999] = np.NaN
@@ -28,26 +45,57 @@ GRACE_data = []
 test = False
 t_correction = date.toordinal(date(2002, 1, 1))
 for i in range(len(GRACE_time)):
-    iyear_start = date.timetuple(date.fromordinal(int(GRACE_time[i, 0]) + t_correction))[0]
-    imonth_start = date.timetuple(date.fromordinal(int(GRACE_time[i, 0]) + t_correction))[1]
-    iday_start = date.timetuple(date.fromordinal(int(GRACE_time[i, 0]) + t_correction))[2]
-    iyear_end = date.timetuple(date.fromordinal(int(GRACE_time[i, 1]) + t_correction))[0]
-    imonth_end = date.timetuple(date.fromordinal(int(GRACE_time[i, 1]) + t_correction))[1]
-    iday_end = date.timetuple(date.fromordinal(int(GRACE_time[i, 1]) + t_correction))[2]
+    GRACE_year_start = date.timetuple(date.fromordinal(int(GRACE_time[i, 0]) + t_correction))[0]
+    GRACE_month_start = date.timetuple(date.fromordinal(int(GRACE_time[i, 0]) + t_correction))[1]
+    GRACE_day_start = date.timetuple(date.fromordinal(int(GRACE_time[i, 0]) + t_correction))[2]
+    GRACE_year_end = date.timetuple(date.fromordinal(int(GRACE_time[i, 1]) + t_correction))[0]
+    GRACE_month_end = date.timetuple(date.fromordinal(int(GRACE_time[i, 1]) + t_correction))[1]
+    GRACE_day_end = date.timetuple(date.fromordinal(int(GRACE_time[i, 1]) + t_correction))[2]
     
-    if iyear_start == 2010 and imonth_start == 11:
+    if GRACE_year_start == 2010 and GRACE_month_start == 11:
         test = True
-    if iyear_start == 2016 and imonth_start == 3:
+    if GRACE_year_start == 2016 and GRACE_month_start == 3:
         test = False
     
     if test == True:
-        GRACE_year.append([iyear_start, iyear_end])
-        GRACE_month.append([imonth_start, imonth_end])
-        GRACE_day.append([iday_start, iday_end])
+        GRACE_year.append([GRACE_year_start, GRACE_year_end])
+        GRACE_month.append([GRACE_month_start, GRACE_month_end])
+        GRACE_day.append([GRACE_day_start, GRACE_day_end])
         GRACE_data.append(GRACE_data_pre[i, :, :])
 
 GRACE_data = np.array(GRACE_data)
 
+## Load the SSP data within the time bounds that I am working with
+SSP_year = []
+SSP_month = []
+SSP_day = []
+SSP_data = []
+SSP_dates = []
+test = False
+t_correction = date.toordinal(date(1900, 1, 1))
+for i in range(len(SSP_time)):
+    iSSP_year = date.timetuple(date.fromordinal(int(SSP_time[i]) + t_correction))[0]
+    iSSP_month = date.timetuple(date.fromordinal(int(SSP_time[i]) + t_correction))[1]
+    iSSP_day = date.timetuple(date.fromordinal(int(SSP_time[i]) + t_correction))[2]
+    
+    if iSSP_year == 2010 and iSSP_month == 11:
+        test = True
+    if iSSP_year == 2016 and iSSP_month == 3:
+        test = False
+    
+    if test == True:
+        SSP_year.append(iSSP_year)
+        SSP_month.append(iSSP_month)
+        SSP_day.append(iSSP_day)
+        SSP_dates.append(date(int(iSSP_year), int(iSSP_month), 15))
+        SSP_data.append(SSP_data_pre[i, :, :])
+
+SSP_data = np.array(SSP_data)
+
+SSP_mean = np.nanmean(SSP_data, axis=0)
+for it in range(64):
+    SSP_data[it, :, :] = SSP_data[it, :, :] - SSP_mean
+    
 ## Load the missing month data
 missing_years = []
 missing_months = []
@@ -85,15 +133,16 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             month_step += 1
 
 ## Interpolate the missing months
-GRACE = np.full((64, 180, 360), fill_value=np.NaN)
+GRACE = np.full((64, 180, 361), fill_value=np.NaN)
 for ilat in range(180):
-    for ilon in range(360):
+    for ilon in range(361):
         interp_ts = interpolate.interp1d(grace_ts, GRACE_data[:, ilat, ilon], kind='cubic')
         GRACE[:, ilat, ilon] = interp_ts(month_ts)
 
 ## Save the interpolated data in seperate .nc files
 ## Also resample onto a 0.5 lat, 1.0 lon grid
 
+SSP_time_mean = []
 trigger == False
 A = 0
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
@@ -105,6 +154,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             trigger = False
         
         if trigger == True:
+            ## GRACE
             nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/GRACE/INPUT.nc', 'w')
             nc.createDimension('lat', np.size(GRACE_lat))
             nc.createDimension('lon', np.size(GRACE_lon))
@@ -116,21 +166,47 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             GRACE_save[:] = GRACE[A, :, :]
             nc.close()
             
-            os.system('gmt grdsample /Users/jmh2g09/Documents/PhD/Data/GRACE/INPUT.nc -G/Users/jmh2g09/Documents/PhD/Data/GRACE/OUTPUT.nc -I1.0/0.5 -R0/360/-79/-50')
+            ## ERA Interim Pressure
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SSPressure/INPUT.nc', 'w')
+            nc.createDimension('lat', np.size(SSP_lat))
+            nc.createDimension('lon', np.size(SSP_lon))
+            latitude = nc.createVariable('lat', float, ('lat',))
+            longitude = nc.createVariable('lon', float, ('lon',))
+            SSP_save = nc.createVariable('SSP', float, ('lat','lon',))
+            latitude[:] = SSP_lat
+            longitude[:] = SSP_lon
+            SSP_save[:] = SSP_data[A, :, :]
+            nc.close()
+            
+            os.system('gmt grdsample /Users/jmh2g09/Documents/PhD/Data/GRACE/INPUT.nc \
+                -G/Users/jmh2g09/Documents/PhD/Data/GRACE/OUTPUT.nc -I1.0/0.5 -R0/360/-79/-50')
             os.system('rm /Users/jmh2g09/Documents/PhD/Data/GRACE/INPUT.nc')
+            
+            os.system('gmt grdsample /Users/jmh2g09/Documents/PhD/Data/SSPressure/INPUT.nc \
+                -G/Users/jmh2g09/Documents/PhD/Data/SSPressure/OUTPUT.nc -I1.0/0.5 -R0/360/-79/-50')
+            os.system('rm /Users/jmh2g09/Documents/PhD/Data/SSPressure/INPUT.nc')
             
             nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/GRACE/OUTPUT.nc', 'r')
             lat = nc.variables['y'][:]
             lon = nc.variables['x'][:]
-            z = nc.variables['z'][:]
-            nc.close()
-            os.system('rm /Users/jmh2g09/Documents/PhD/Data/GRACE/OUTPUT.nc')
+            grace_z = nc.variables['z'][:]
+            nc.close
+            ## Because GRACE lon is 0.5:359.5, no data is binned on 0,
+            ## Make 0 equal to 360
+            grace_z[:, 0] = grace_z[:, -1]
             
-            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/GRACE/' + year + month + '_GRACE.nc', 'w')
+            os.system('rm /Users/jmh2g09/Documents/PhD/Data/GRACE/OUTPUT.nc')
 
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SSPressure/OUTPUT.nc', 'r')
+            lat = nc.variables['y'][:]
+            lon = nc.variables['x'][:]
+            ssp_z = nc.variables['z'][:]
+            nc.close()
+            os.system('rm /Users/jmh2g09/Documents/PhD/Data/SSPressure/OUTPUT.nc')
+
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/GRACE/' + year + month + '_GRACE.nc', 'w')
             nc.createDimension('lat', np.size(lat))
             nc.createDimension('lon', np.size(lon))
-
             latitude = nc.createVariable('latitude', float, ('lat',))
             longitude = nc.createVariable('longitude', float, ('lon',))
             GRACE_save = nc.createVariable('GRACE', float, ('lat','lon',))
@@ -147,7 +223,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             latitude[:] = lat
             longitude[:] = lon
-            GRACE_save[:] = z
+            GRACE_save[:] = grace_z
 
             nc.close()
             
@@ -163,12 +239,39 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             grid_lats, grid_lons = np.meshgrid(lat, lon)
             stereo_x, stereo_y = m(grid_lons, grid_lats)
         
-            m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(z)), cmap='RdBu_r')
+            m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(grace_z - ssp_z)), cmap='RdBu_r')
             m.colorbar()
+            pl.title('GRACE gravity anomalies Units: seawater thickness (m)')
             pl.savefig('/Users/jmh2g09/Documents/PhD/Data/GRACE/Figures/' + year + month + '_GRACE.png', transparent=True, dpi=300)
             pl.close()
             
+            pl.figure()
+            pl.clf()
+            m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+            m.drawmapboundary()
+            m.drawcoastlines(zorder=10)
+            m.fillcontinents(zorder=10)
+            m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+            m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+
+            grid_lats, grid_lons = np.meshgrid(lat, lon)
+            stereo_x, stereo_y = m(grid_lons, grid_lats)
+        
+            m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ssp_z)), cmap='RdBu_r')
+            m.colorbar()
+            pl.title('Sea Surface Pressure Anomaly Unit: seawater thickness (m)')
+            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SSPressure/Figures/' + year + month + '_MSLP.png', transparent=True, dpi=300)
+            pl.close()
+            
+            SSP_time_mean.append(np.nanmean(np.nanmean(ssp_z, axis=1)))
+            
             A += 1
 
-
-## TODO: Correct for atmospheric changes in pressure, which result in an increase in water depth and therefore mass
+fig = pl.figure()
+pl.plot(SSP_dates, SSP_time_mean)
+pl.title('Sea Surface Pressure timeseries')
+pl.ylabel('Sea Surface Pressure (Sea water equivalent) (m)')
+pl.xticks(rotation='vertical')
+fig.autofmt_xdate()
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SSPressure/Figures/SSP_timeseries.png', transparent=True, dpi=300)
+pl.close()
