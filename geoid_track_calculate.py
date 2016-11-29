@@ -29,7 +29,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             # insert this into gmt function 'grdtrack' and interpolate the points
 
-            geoid_file = '/Users/jmh2g09/Documents/PhD/Geoid/EIGEN6c4/EIGEN6c4_GRID_f.nc'
+            geoid_file = '/Users/jmh2g09/Documents/PhD/Geoid/EIGEN6c4/EIGEN6c4_GRID.nc'
             outfile = '/Users/jmh2g09/Documents/PhD/Geoid/OUTPUT.txt'
 
             os.system('gmt grdtrack /Users/jmh2g09/Documents/PhD/Geoid/INPUT.txt -f0x,1y -G' + geoid_file + ' > ' + outfile)
