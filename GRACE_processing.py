@@ -5,6 +5,7 @@ from datetime import date
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as pl
 import os
+import functions as funct
 
 GRACE_file = '/Users/jmh2g09/Documents/PhD/Data/GRACE/GRCTellus.JPL.200208_201603.OCN.RL05_1.DSTvDPC1412.nc'
 
@@ -14,7 +15,7 @@ GRACE_lat = nc.variables['lat'][:]
 GRACE_lon = nc.variables['lon'][:]
 GRACE_time = nc.variables['time_bounds'][:]
 # Convert GRACE lwe thickness to m (from cm) 
-GRACE_data_pre = nc.variables['lwe_thickness'][:] / 10# (time, lat, lon)
+GRACE_data_pre = nc.variables['lwe_thickness'][:] / 100# (time, lat, lon)
 nc.close()
 
 GRACE_lon = np.append(GRACE_lon, 360.5)
@@ -28,7 +29,7 @@ SSP_lat = nc.variables['latitude'][:]
 SSP_lon = nc.variables['longitude'][:]
 SSP_time = nc.variables['time'][:] / 24 # Convert to days
 # Convert SSP (Pa) to m of water equivalent
-SSP_data_pre = nc.variables['msl'][:] / (1025*9.81)# (time, lat, lon)
+SSP_data_pre = nc.variables['msl'][:] / (-1025*9.81)# (time, lat, lon)
 nc.close()
 
 SSP_lon = np.append(SSP_lon, 360)
@@ -139,6 +140,10 @@ for ilat in range(180):
         interp_ts = interpolate.interp1d(grace_ts, GRACE_data[:, ilat, ilon], kind='cubic')
         GRACE[:, ilat, ilon] = interp_ts(month_ts)
 
+GRACE_mean = np.nanmean(GRACE, axis=0)
+for it in range(64):
+    GRACE[it, :, :] = GRACE[it, :, :] - GRACE_mean
+
 ## Save the interpolated data in seperate .nc files
 ## Also resample onto a 0.5 lat, 1.0 lon grid
 
@@ -223,7 +228,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             latitude[:] = lat
             longitude[:] = lon
-            GRACE_save[:] = grace_z
+            GRACE_save[:] = grace_z - ssp_z
 
             nc.close()
             
@@ -263,7 +268,15 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SSPressure/Figures/' + year + month + '_MSLP.png', transparent=True, dpi=300)
             pl.close()
             
-            SSP_time_mean.append(np.nanmean(np.nanmean(ssp_z, axis=1)))
+            ## Calculate the surface area of each cell
+            # Mesh the lat and lon together calculate the surface area for each cell
+            grid_lon, grid_lat = np.meshgrid(lon, lat)
+            # Calculate the surface area of each cell
+            S = funct.surface_area(grid_lat, grid_lon, 0.5, 1.0)
+            # Get total area for the ocean region
+            total_area = np.nansum(np.nansum(~np.isnan(grace_z) * S))
+            
+            SSP_time_mean.append(np.nanmean(ssp_z * S) / total_area)
             
             A += 1
 
