@@ -72,7 +72,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             under_ice = np.where(ice_conc > 0)
             for i in range(np.shape(under_ice)[1]):
                 dot_anom_ocean[under_ice[0][i]][under_ice[1][i]] = np.nan
-            # Calculate the total area covered by sea ice
+            # Calculate the total area NOT covered by sea ice
             ocean_area = np.nansum(np.nansum(~np.isnan(dot_anom_ocean) * S))
             total_area_ocean.append(ocean_area)
             # Calculate the weighted average DOT under the sea ice
