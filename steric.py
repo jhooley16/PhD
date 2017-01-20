@@ -7,34 +7,31 @@ import functions as funct
 
 steric_ts = []
 dot_ts = []
-eustatic_ts = []
-
-steric_ts_ice = []
-dot_ts_ice = []
-eustatic_ts_ice = []
-
-steric_ts_ocean = []
-dot_ts_ocean = []
-eustatic_ts_ocean = []
+baristatic_ts = []
 
 dates = []
 
-total_area_ice = []
-total_area_ice = []
+# Load the SAM index file
+sam_file = '/Users/jmh2g09/Documents/PhD/Data/Wind/SAM_2010-2016.txt'
+sam_index = []
+f = open(sam_file, 'r')
+for line in f:
+    line = line.strip()
+    sam_index.append(float(line))
+f.close()
+sam_index = np.array(sam_index)
 
 steric_seasonal = np.full((12, 5), fill_value=np.NaN)
 dot_seasonal = np.full((12, 5), fill_value=np.NaN)
-eustatic_seasonal =np.full((12, 5), fill_value=np.NaN)
+baristatic_seasonal = np.full((12, 5), fill_value=np.NaN)
+ice_extent = np.full((12, 5), fill_value=np.NaN)
+wind_seasonal = np.full((12, 5), fill_value=np.NaN)
+SAM_seasonal  = np.full((12, 5), fill_value=np.NaN)
 
-steric_seasonal_ice = np.full((12, 5), fill_value=np.NaN)
-dot_seasonal_ice = np.full((12, 5), fill_value=np.NaN)
-eustatic_seasonal_ice =np.full((12, 5), fill_value=np.NaN)
-
-steric_seasonal_ocean = np.full((12, 5), fill_value=np.NaN)
-dot_seasonal_ocean = np.full((12, 5), fill_value=np.NaN)
-eustatic_seasonal_ocean =np.full((12, 5), fill_value=np.NaN)
-
+steric_months = np.full((59, 361, 12, 7), fill_value=np.NaN)
+ice_months = np.full((59, 361, 12, 7), fill_value=np.NaN)
 trigger = False
+A = 0
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
     
     # Cycle through the months
@@ -53,159 +50,134 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             lat = nc.variables['latitude'][:]
             lon = nc.variables['longitude'][:]
             dot = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:] # (lat, lon)
-            dot_ice = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:] # (lat, lon)
-            dot_ocean = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:] # (lat, lon)
             ice = nc.variables['sea_ice_concentration'][:]
             nc.close()
+            
+            dot[np.isnan(dot)] = 999
+            
+            ice_months[:, :, int(month)-1, int(year)-2010] = ice
+            
+            grid_lats, grid_lons = np.meshgrid(lat, lon)
             
             GRACE_file = '/Users/jmh2g09/Documents/PhD/Data/GRACE/' + year + month + '_GRACE.nc'
             # Load GRACE
             nc = Dataset(GRACE_file, 'r')
             lat = nc.variables['latitude'][:]
             lon = nc.variables['longitude'][:]
-            eustatic = nc.variables['GRACE'][:] # (lat, lon)
-            eustatic_ice = nc.variables['GRACE'][:] # (lat, lon)
-            eustatic_ocean = nc.variables['GRACE'][:] # (lat, lon)
+            baristatic = nc.variables['GRACE'][:] # (lat, lon)
             nc.close()
             
-            # Calculate the steric 
-            steric = dot - eustatic
-            steric_ice = dot_ice - eustatic_ice
-            steric_ocean = dot_ocean - eustatic_ocean
-
+            wind_file = '/Users/jmh2g09/Documents/PhD/Data/Wind/' + year + month + '_wind.nc'
+            # Load GRACE
+            nc = Dataset(wind_file, 'r')
+            wind_lat = nc.variables['latitude'][:]
+            wind = nc.variables['u_wind'][:] # (lat, lon)
+            nc.close()
+            
+            # Apply the GMT land mask
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
+            # Load the mask (ocean == 1)
+            ocean_mask = nc.variables['z'][:]
+            ocean_mask[ocean_mask != 1] = np.NaN
+            ice_mask = nc.variables['z'][:]
+            ice_mask[ice_mask != 1] = np.NaN
+            nc.close()
+            
+            ocean_mask[np.isnan(baristatic)] = np.NaN
+            ocean_mask[np.isnan(dot)] = np.NaN
+            
+            ice_mask[np.isnan(baristatic)] = np.NaN
+            ice_mask[np.isnan(dot)] = np.NaN
+            ice_mask[ice < 20] = np.NaN
+            
+            # Calculate the steric
+            steric = dot - baristatic
+            
+            steric_months[:, :, int(month)-1, int(year)-2010] = steric
+            
             ## Calculate the surface area of each cell
             # Mesh the lat and lon together calculate the surface area for each cell
             grid_lon, grid_lat = np.meshgrid(lon, lat)
             # Calculate the surface area of each cell
             S = funct.surface_area(grid_lat, grid_lon, 0.5, 1.0)
             # Get total area for the ocean region
-            total_area = np.nansum(np.nansum(~np.isnan(dot) * S))
-            
-            # Define the open ocean as 0% ice concentration
-            open_ocean = np.where(ice == 0)
-            under_ice = np.where(ice > 0)
-            
-            for i in range(np.shape(open_ocean)[1]):
-                steric_ice[open_ocean[0][i]][open_ocean[1][i]] = np.NaN
-                dot_ice[open_ocean[0][i]][open_ocean[1][i]] = np.NaN
-                eustatic_ice[open_ocean[0][i]][open_ocean[1][i]] = np.NaN
-            
-            for i in range(np.shape(under_ice)[1]):
-                steric_ocean[under_ice[0][i]][under_ice[1][i]] = np.NaN
-                dot_ocean[under_ice[0][i]][under_ice[1][i]] = np.NaN
-                eustatic_ocean[under_ice[0][i]][under_ice[1][i]] = np.NaN
-                
-            # Calculate the total area covered by sea ice
-            ice_area = np.nansum(np.nansum(~np.isnan(dot_ice) * S))
-            # Calculate the total area NOT covered by sea ice
-            ocean_area = np.nansum(np.nansum(~np.isnan(dot_ocean) * S))
-            
+            total_area = np.nansum(ocean_mask * S)
+
+            total_ice_area = np.nansum(ice_mask * S)
+
             # Calculate weighed mean for all the ocean
             steric_ts.append(np.nansum(steric * S) / total_area)
             dot_ts.append(np.nansum(dot * S) / total_area)
-            eustatic_ts.append(np.nansum(eustatic * S) / total_area)
-            
-            # Calculate the weighted mean for the ice-covered ocean
-            steric_ts_ice.append(np.nansum(steric_ice * S) / ice_area)
-            dot_ts_ice.append(np.nansum(dot_ice * S) / ice_area)
-            eustatic_ts_ice.append(np.nansum(eustatic_ice * S) / ice_area)
-            
-            # Calculate the weighted mean for the open ocean
-            steric_ts_ocean.append(np.nansum(steric_ocean * S) / ocean_area)
-            dot_ts_ocean.append(np.nansum(dot_ocean * S) / ocean_area)
-            eustatic_ts_ocean.append(np.nansum(eustatic_ocean * S) / ocean_area)
-            
+            baristatic_ts.append(np.nansum(baristatic * S) / total_area)
+
             if int(year) >= 2011 and int(year) < 2016:
                 it = int(year) - 2011
                 # Calculate the monthly contribution for all the ocean
                 steric_seasonal[int(month) - 1, it] = np.nansum(steric * S) / total_area
                 dot_seasonal[int(month) - 1, it] = np.nansum(dot * S) / total_area
-                eustatic_seasonal[int(month) - 1, it] = np.nansum(eustatic * S) / total_area
-                
-                # Calculate the monthly contribution for open ocean
-                steric_seasonal_ocean[int(month) - 1, it] = np.nansum(steric_ocean * S) / ocean_area
-                dot_seasonal_ocean[int(month) - 1, it] = np.nansum(dot_ocean * S) / ocean_area
-                eustatic_seasonal_ocean[int(month) - 1, it] = np.nansum(eustatic_ocean * S) / ocean_area
-                
-                # Calculate the monthly contribution for under ice
-                steric_seasonal_ice[int(month) - 1, it] = np.nansum(steric_ice * S) / ice_area
-                dot_seasonal_ice[int(month) - 1, it] = np.nansum(dot_ice * S) / ice_area
-                eustatic_seasonal_ice[int(month) - 1, it] = np.nansum(eustatic_ice * S) / ice_area
-
+                baristatic_seasonal[int(month) - 1, it] = np.nansum(baristatic * S) / total_area
+                ice_extent[int(month) - 1, it] = total_ice_area
+                wind_seasonal[int(month) - 1, it] = np.nanmean(wind[0, :])
+                SAM_seasonal[int(month) - 1, it] = sam_index[A]
+            
+            A += 1
 
 fig = pl.figure()
 pl.plot(dates, dot_ts, label='DOT')
-pl.plot(dates, np.array(eustatic_ts) + .1, label='Eustatic DOT')
+pl.plot(dates, np.array(baristatic_ts) + .1, label='Baristatic DOT')
 pl.plot(dates, np.array(steric_ts) - .1, label='Steric DOT')
-pl.legend(loc='best')
+pl.legend(loc='best', prop={'size':8})
 pl.xticks(rotation='vertical')
 fig.autofmt_xdate()
 pl.ylabel('DOT (m)')
 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_timeseries.png', transparent=True, doi=300)
 pl.close()
 
-fig = pl.figure()
-pl.plot(dates, dot_ts_ocean, label='DOT')
-pl.plot(dates, np.array(eustatic_ts_ocean) + .1, label='Eustatic DOT')
-pl.plot(dates, np.array(steric_ts_ocean) - .1, label='Steric DOT')
-pl.legend(loc='best')
-pl.xticks(rotation='vertical')
-fig.autofmt_xdate()
-pl.ylabel('DOT (m)')
-pl.title('Open Ocean')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_timeseries_ocean.png', transparent=True, doi=300)
-pl.close()
-
-fig = pl.figure()
-pl.plot(dates, dot_ts_ice, label='DOT')
-pl.plot(dates, np.array(eustatic_ts_ice) + .1, label='Eustatic DOT')
-pl.plot(dates, np.array(steric_ts_ice) - .1, label='Steric DOT')
-pl.legend(loc='best')
-pl.xticks(rotation='vertical')
-fig.autofmt_xdate()
-pl.ylabel('DOT (m)')
-pl.title('Under Ice')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_timeseries_ice.png', transparent=True, doi=300)
-pl.close()
-
 steric_season = np.nanmean(steric_seasonal, axis=1)
 dot_season = np.nanmean(dot_seasonal, axis=1)
-eustatic_season = np.nanmean(eustatic_seasonal, axis=1)
-
-steric_season_ice = np.nanmean(steric_seasonal_ice, axis=1)
-dot_season_ice = np.nanmean(dot_seasonal_ice, axis=1)
-eustatic_season_ice = np.nanmean(eustatic_seasonal_ice, axis=1)
-
-steric_season_ocean = np.nanmean(steric_seasonal_ocean, axis=1)
-dot_season_ocean = np.nanmean(dot_seasonal_ocean, axis=1)
-eustatic_season_ocean = np.nanmean(eustatic_seasonal_ocean, axis=1)
+baristatic_season = np.nanmean(baristatic_seasonal, axis=1)
+ice_extent_season = np.nanmean(ice_extent, axis=1)
+wind_season = np.nanmean(wind_seasonal, axis=1)
+SAM_season = np.nanmean(SAM_seasonal, axis=1)
 
 fig = pl.figure()
-pl.plot(range(1, 13), np.array(dot_season), label='DOT')
-pl.plot(range(1, 13), np.array(eustatic_season), label='Eustatic DOT')
-pl.plot(range(1, 13), np.array(steric_season), label='Steric DOT')
+pl.plot(range(1, 13), np.array(dot_season) * 100, label='DOT')
+pl.plot(range(1, 13), np.array(baristatic_season) * 100, label='Baristatic DOT')
+pl.plot(range(1, 13), np.array(steric_season) * 100, label='Steric DOT')
+pl.plot(range(1, 13), np.array(ice_extent_season) / 5000000, label='Ice Extent (*5e6)')
+pl.plot(range(1, 13), wind_season - 7., label='wind 10m u-component (+ 7)')
+pl.plot(range(1, 13), SAM_season, label='SAM Index')
+pl.xticks(range(1, 13))
 pl.xlim([1, 12])
-pl.legend(loc='best')
-pl.ylabel('DOT (m)')
+pl.legend(loc='best', prop={'size':8})
+pl.ylabel('DOT (cm)')
+pl.xlabel('Month')
 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_seasonal.png', transparent=True, doi=300)
 pl.close()
 
-fig = pl.figure()
-pl.plot(range(1, 13), np.array(dot_season_ice), label='DOT')
-pl.plot(range(1, 13), np.array(eustatic_season_ice), label='Eustatic DOT')
-pl.plot(range(1, 13), np.array(steric_season_ice), label='Steric DOT')
-pl.xlim([1, 12])
-pl.legend(loc='best')
-pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_seasonal_ice.png', transparent=True, doi=300)
-pl.close()
+steric_months_avg = np.nanmean(steric_months, axis=3)
+steric_months_avg[steric_months_avg > 100] = np.NaN
 
-fig = pl.figure()
-pl.plot(range(1, 13), np.array(dot_season_ocean), label='DOT')
-pl.plot(range(1, 13), np.array(eustatic_season_ocean), label='Eustatic DOT')
-pl.plot(range(1, 13), np.array(steric_season_ocean), label='Steric DOT')
-pl.xlim([1, 12])
-pl.legend(loc='best')
-pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_seasonal_ocean.png', transparent=True, doi=300)
-pl.close()
+ice_months_avg = np.nanmean(ice_months, axis=3)
+
+for imnth in range(12):
+    pl.figure()
+    pl.clf()
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    m.drawmapboundary()
+    m.drawcoastlines(zorder=10)
+    m.fillcontinents(zorder=10)
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+
+    grid_lats, grid_lons = np.meshgrid(lat, lon)
+    stereo_x, stereo_y = m(grid_lons, grid_lats)
+    
+    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(steric_months_avg[:, :, imnth])), cmap='RdBu_r')
+    m.colorbar()
+    pl.clim([-0.1, 0.1])
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_months_avg[:, :, imnth])), colors='k', levels=[20])
+
+    pl.title('Steric height estimated from (Altimetry - GRACE), (m)')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_' + str(imnth + 1) + '.png', transparent=True, dpi=300)
+    pl.close()

@@ -19,7 +19,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             nc.close()
 
-            # Filter the DOT with a 800km gaussian filter
+            # Filter the DOT with a 500km gaussian filter
             os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_seasonal_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_filt.nc')
             os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_no_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_2_filt.nc')
             os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_constant_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_3_filt.nc')

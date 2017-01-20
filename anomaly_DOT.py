@@ -4,17 +4,19 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
+nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/MDT_mean.nc', 'r')
+mean_year = nc.variables['mean_dynamic_topography_seasonal_offset'][:]
+mean_2_year = nc.variables['mean_dynamic_topography_no_offset'][:]
+mean_3_year = nc.variables['mean_dynamic_topography_constant_offset'][:]
+lat = nc.variables['latitude'][:]
+lon = nc.variables['longitude'][:]
+nc.close()
+
+anom_seasonal = np.full((12, len(lat), len(lon), 7), fill_value=np.NaN)
+ice_seasonal = np.full((12, len(lat), len(lon), 7), fill_value=np.NaN)
+            
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
-
     os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + year)
-
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/MDT_mean.nc', 'r')
-    mean_year = nc.variables['mean_dynamic_topography_seasonal_offset'][:]
-    mean_2_year = nc.variables['mean_dynamic_topography_no_offset'][:]
-    mean_3_year = nc.variables['mean_dynamic_topography_constant_offset'][:]
-    lat = nc.variables['latitude'][:]
-    lon = nc.variables['longitude'][:]
-    nc.close()
     for file in os.listdir():
         if file[-11:] == 'DOT_filt.nc':
             print(file)
@@ -27,9 +29,15 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             ice_data = nc.variables['sea_ice_concentration'][:]
         
             nc.close()
-            dot_anomaly = np.subtract(dot, mean_year)
-            dot_2_anomaly = np.subtract(dot_2, mean_2_year)
-            dot_3_anomaly = np.subtract(dot_3, mean_3_year)
+            dot_anomaly = dot - mean_year
+            dot_2_anomaly = dot_2 - mean_2_year
+            dot_3_anomaly = dot_3 - mean_3_year
+            
+            dot_anomaly_test = dot_2 - mean_2_year
+            dot_anomaly_test[np.isnan(dot_anomaly_test)] = 999
+            
+            anom_seasonal[int(month)-1, :, :, int(year)-2010] = dot_anomaly_test
+            ice_seasonal[int(month)-1, :, :, int(year)-2010] = ice_data
             
             nc = Dataset('Anomalies/' + year + month + '_DOT_anomaly.nc', 'w')
         
@@ -64,39 +72,28 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             stereo_x, stereo_y = m(grid_lons, grid_lats)
             m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anomaly)), cmap='RdBu_r')
             m.colorbar()
-            pl.clim(.3, -.3)
+            pl.clim(-.3, .3)
             m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_data)), colors='k', levels=[20])
             pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_DOT_anomaly.png', format='png', transparent=True, dpi=300)
             pl.close()
-            
-            pl.figure()
-            pl.clf()
-            m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
-            m.drawmapboundary()
-            m.drawcoastlines(zorder=10)
-            m.fillcontinents(zorder=10)
-            m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-            m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-            stereo_x, stereo_y = m(grid_lons, grid_lats)
-            m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anomaly)), cmap='RdBu_r')
-            m.colorbar()
-            pl.clim(.3, -.3)
-            m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_data)), colors='k', levels=[20])
-            pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_DOT_anomaly_no_offset.png', format='png', transparent=True, dpi=300)
-            pl.close()
-            
-            pl.figure()
-            pl.clf()
-            m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
-            m.drawmapboundary()
-            m.drawcoastlines(zorder=10)
-            m.fillcontinents(zorder=10)
-            m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-            m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-            stereo_x, stereo_y = m(grid_lons, grid_lats)
-            m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_3_anomaly)), cmap='RdBu_r')
-            m.colorbar()
-            pl.clim(.3, -.3)
-            m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_data)), colors='k', levels=[20])
-            pl.savefig('Anomalies/Figures/' + str(year) + '_' + str(month) + '_DOT_anomaly_constant_offset.png', format='png', transparent=True, dpi=300)
-            pl.close()
+
+seasonal = np.nanmean(anom_seasonal, axis=3)
+seasonal[seasonal > 100] = np.NaN
+ice_season = np.nanmean(ice_seasonal, axis=3)
+
+for imnth in range(12):
+    pl.figure()
+    pl.clf()
+    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+    m.drawmapboundary()
+    m.drawcoastlines(zorder=10)
+    m.fillcontinents(zorder=10)
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+    stereo_x, stereo_y = m(grid_lons, grid_lats)
+    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(seasonal[imnth, :, :])), cmap='RdBu_r')
+    m.colorbar()
+    pl.clim(-.1, .1)
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_season[imnth, :, :])), colors='k', levels=[20])
+    pl.savefig('../Figures/' + str(imnth + 1) + '_DOT_anomaly_month.png', format='png', transparent=True, dpi=300)
+    pl.close()
