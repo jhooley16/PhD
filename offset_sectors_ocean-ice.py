@@ -2,6 +2,7 @@ import os
 import functions as funct
 import numpy as np
 import matplotlib.pyplot as pl
+from datetime import date
 
 average_circumpolar_offset_ocean_ice = np.zeros(12)
 
@@ -11,6 +12,7 @@ ROSS_timeseries_ocean_ice = []
 AMBEL_timeseries_ocean_ice = []
 timeseries_ocean_ice = []
 
+dates = []
 
 for year in ['2011', '2012', '2013', '2014', '2015']:
     print(year)
@@ -36,6 +38,8 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
         offset_ROSS_ocean_ice = []
         offset_AMBEL_ocean_ice = []
         offset_circum_ocean_ice = []
+        
+        dates.append(date(int(year), int(month), 15))
 
         if os.path.isdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev'):
             os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev')
@@ -51,97 +55,176 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
                 
                 len_bound = len(ocean_to_ice)             
                 
-                ssha = []
-                lon = []
-                lat = []
-                surface = []
+                ssha_pre = []
+                lon_pre = []
+                lat_pre = []
+                surface_pre = []
 
                 f = open(file, 'r')
                 for line in f:
                     line = line.strip()
                     columns = line.split()
-                    # If data point is from open ocean (1) or from a lead (2)
-                    if columns[0] == '1' or columns[0] == '2':
-                        # If data point is listed as 'valid'
-                        if columns[1] == '1':
-                            lat.append(float(columns[5]))
-                            lon.append(float(columns[6]))
-                            ssha.append((float(columns[7]) - float(columns[8])))
-                            surface.append(int(columns[0]))
-
-                tracker_type = funct.mode_points(lat, lon, month)
+                    # If data point is listed as 'valid'
+                    if columns[1] == '1':
+                        # If data point is from open ocean (1) or from a lead (2)
+                        if columns[0] == '1' or columns[0] == '2':
+                            # If the ssh point is less than 3 m from the mssh
+                            if abs(float(columns[7]) - float(columns[8])) < .3:
+                                    lat_pre.append(float(columns[5]))
+                                    lon_pre.append(float(columns[6]))
+                                    surface_pre.append(int(columns[0]))
+                                    ssha_pre.append(float(columns[7]) - float(columns[8]))
+                f.close()
                 
-                for point in range(len(tracker_type)):
-                    if tracker_type[point] == 1 and surface[point] == '1':
-                        ssha[point] += -0.00962962551012
+                descending = np.where(np.gradient(lat_pre) < 0.)[0]
+                if len(descending) > 10:
+                    inflection = descending[-1]
+                    #### Descending ####
+                
+                    ssha_desc = np.array(ssha_pre[:inflection])
+                    lat_desc = np.array(lat_pre[:inflection])
+                    lon_desc = np.array(lon_pre[:inflection])
+                    surface_desc = np.array(surface_pre[:inflection])
+                
+                    ssha_desc = ssha_desc[np.argsort(-lat_desc)]
+                    lon_desc = lon_desc[np.argsort(-lat_desc)]
+                    surface_desc = surface_desc[np.argsort(-lat_desc)]
+                    lat_desc = lat_desc[np.argsort(-lat_desc)]
+                
+                    ## Filter the track
+                    input_ssh = open('../INPUT_ssh.dat', 'w')
+                    for ilat in range(len(lat_desc)):
+                        print(-lat_desc[ilat], ssha_desc[ilat], file=input_ssh)
+                    input_ssh.close()
 
-                # Find the boundaries
-                iedge_ocean_ice = []
-                for it in range(len(surface)):
-                    # Find ice boundaries
-                    if surface[it:it + len_bound] == ocean_to_ice:
-                        iedge_ocean_ice.append(it + len_bound//2)
-                    elif surface[it:it + len_bound] == ice_to_ocean:
-                        iedge_ocean_ice.append(it + len_bound//2)
+                    os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.2 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
+                    os.system('rm ../INPUT_ssh.dat')
+                
+                    output_ssh = open('../OUTPUT_ssh.dat', 'r')
+                    lat_desc_filt = []
+                    ssha_desc_filt = []
+                    for line in output_ssh:
+                        line.strip()
+                        columns = line.split()
+                        lat_desc_filt.append(-float(columns[0]))
+                        ssha_desc_filt.append(float(columns[1]))
+                    output_ssh.close()
+                
+                    os.system('rm ../OUTPUT_ssh.dat')
+                
+                    #### Ascending ######
+                
+                    ssha_asc = np.array(ssha_pre[inflection:])
+                    lat_asc = np.array(lat_pre[inflection:])
+                    lon_asc = np.array(lon_pre[inflection:])
+                    surface_asc = np.array(surface_pre[inflection:])
+                
+                    ssha_asc = ssha_asc[np.argsort(lat_asc)]
+                    lon_asc = lon_asc[np.argsort(lat_asc)]
+                    surface_asc = surface_asc[np.argsort(lat_asc)]
+                    lat_asc = lat_asc[np.argsort(lat_asc)]
+                
+                    ## Filter the track
+                    input_ssh = open('../INPUT_ssh.dat', 'w')
+                    for ilat in range(len(lat_asc)):
+                        print(lat_asc[ilat], ssha_asc[ilat], file=input_ssh)
+                    input_ssh.close()
 
-                for step in iedge_ocean_ice:
-                    # If it's an ocean to ice step
-                    if surface[step - len_bound//2:step + len_bound//2] == ocean_to_ice:
-                        if np.max(abs(np.gradient(lat[step - len_bound//2:step + len_bound//2]))) < 1:
-                            if abs(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2])) < .3:
-                                # Calculate circumpolar offset
-                                offset_circum_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                hist_offset_circum_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                # Choose what the sector the offset point lies within
-                                if -60. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 0.:
-                                    #print('Weddell')
-                                    offset_WEDD_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                    hist_offset_WEDD_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                elif 0 <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 160.:
-                                    #print('Indian')
-                                    offset_IND_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                    hist_offset_IND_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                elif 160. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 180.:
-                                    #print('Ross')
-                                    offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                    hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                elif -180. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -130.:
-                                    #print('Ross')
-                                    offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                    hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                elif -130. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -60.:
-                                    #print('Amundsen-Bellingshausen')
-                                    offset_AMBEL_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
-                                    hist_offset_AMBEL_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                    os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.2 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
+                    os.system('rm ../INPUT_ssh.dat')
+                
+                    output_ssh = open('../OUTPUT_ssh.dat', 'r')
+                    lat_asc_filt = []
+                    ssha_asc_filt = []
+                    for line in output_ssh:
+                        line.strip()
+                        columns = line.split()
+                        lat_asc_filt.append(float(columns[0]))
+                        ssha_asc_filt.append(float(columns[1]))
+                    output_ssh.close()
+                
+                    os.system('rm ../OUTPUT_ssh.dat')
 
-                    # If it's an ice to ocean step
-                    if surface[step - len_bound//2:step + len_bound//2] == ice_to_ocean:
-                        if np.max(abs(np.gradient(lat[step - len_bound//2:step + len_bound//2]))) < 1:
-                            if abs(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step])) < .3:
-                                # Calculate circumpolar offset
-                                offset_circum_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                hist_offset_circum_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                # Choose what the sector the offset point lies within
-                                if -60. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 0.:
-                                    #print('Weddell')
-                                    offset_WEDD_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                    hist_offset_WEDD_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                elif 0 <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 160.:
-                                    #print('Indian')
-                                    offset_IND_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                    hist_offset_IND_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                elif 160. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 180.:
-                                    #print('Ross')
-                                    offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                    hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                elif -180. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -130.:
-                                    #print('Ross')
-                                    offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                    hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                elif -130. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -60.:
-                                    #print('Amundsen-Bellingshausen')
-                                    offset_AMBEL_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
-                                    hist_offset_AMBEL_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                    lat =  list(lat_desc_filt) + list(lat_asc_filt)
+                    ssha = list(ssha_desc_filt) + list(ssha_asc_filt)
+                    lon =  list(lon_desc) + list(lon_asc)
+                    surface = list(surface_desc) + list(surface_asc)
+                
+                    if len(lat) == len(lon):
+                        # Generate a list of retracker modes for this track
+                        tracker_type = funct.mode_points(lat, lon, month)
+                
+                        for point in range(len(tracker_type)):
+                            if tracker_type[point] == 1 and surface[point] == '1':
+                                ssha[point] += funct.apply_offset(month, 'SAR_ocean')
+
+                        # Find the boundaries
+                        iedge_ocean_ice = []
+                        for it in range(len(surface)):
+                            # Find ice boundaries
+                            if surface[it:it + len_bound] == ocean_to_ice:
+                                iedge_ocean_ice.append(it + len_bound//2)
+                            elif surface[it:it + len_bound] == ice_to_ocean:
+                                iedge_ocean_ice.append(it + len_bound//2)
+
+                        for step in iedge_ocean_ice:
+                            # If it's an ocean to ice step
+                            if surface[step - len_bound//2:step + len_bound//2] == ocean_to_ice:
+                                if np.max(abs(np.gradient(lat[step - len_bound//2:step + len_bound//2]))) < 1:
+                                    if abs(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2])) < .3:
+                                        # Calculate circumpolar offset
+                                        offset_circum_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                        hist_offset_circum_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                        # Choose what the sector the offset point lies within
+                                        if -60. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 0.:
+                                            #print('Weddell')
+                                            offset_WEDD_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                            hist_offset_WEDD_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                        elif 0 <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 160.:
+                                            #print('Indian')
+                                            offset_IND_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                            hist_offset_IND_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                        elif 160. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 180.:
+                                            #print('Ross')
+                                            offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                            hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                        elif -180. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -130.:
+                                            #print('Ross')
+                                            offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                            hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                        elif -130. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -60.:
+                                            #print('Amundsen-Bellingshausen')
+                                            offset_AMBEL_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+                                            hist_offset_AMBEL_ocean_ice.append(np.mean(ssha[step - len_bound//2:step]) - np.mean(ssha[step:step + len_bound//2]))
+
+                            # If it's an ice to ocean step
+                            if surface[step - len_bound//2:step + len_bound//2] == ice_to_ocean:
+                                if np.max(abs(np.gradient(lat[step - len_bound//2:step + len_bound//2]))) < 1:
+                                    if abs(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step])) < .3:
+                                        # Calculate circumpolar offset
+                                        offset_circum_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                        hist_offset_circum_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                        # Choose what the sector the offset point lies within
+                                        if -60. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 0.:
+                                            #print('Weddell')
+                                            offset_WEDD_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                            hist_offset_WEDD_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                        elif 0 <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 160.:
+                                            #print('Indian')
+                                            offset_IND_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                            hist_offset_IND_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                        elif 160. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= 180.:
+                                            #print('Ross')
+                                            offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                            hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                        elif -180. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -130.:
+                                            #print('Ross')
+                                            offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                            hist_offset_ROSS_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                        elif -130. <= np.mean(lon[step - len_bound//2:step + len_bound//2]) <= -60.:
+                                            #print('Amundsen-Bellingshausen')
+                                            offset_AMBEL_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
+                                            hist_offset_AMBEL_ocean_ice.append(np.mean(ssha[step:step + len_bound//2]) - np.mean(ssha[step - len_bound//2:step]))
 
             monthly_offset_WEDD_ocean_ice.append(np.mean(offset_WEDD_ocean_ice))
             monthly_offset_IND_ocean_ice.append(np.mean(offset_IND_ocean_ice))
@@ -161,7 +244,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.title(year + ' ocean - ice (SAR) histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/' + year + '_ocean_ice_offset_hist.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + year + '_ocean_ice_offset_hist.png', format='png')
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
@@ -177,32 +260,40 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/' + year + '_ocean_ice_offset_sectors.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + year + '_ocean_ice_offset_sectors.png', format='png')
     pl.close()
 
     average_circumpolar_offset_ocean_ice += np.array(monthly_offset_ocean_ice)
 
-f=open('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/ocean_ice_timeseries.txt', 'w')
+f=open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ocean_ice_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_ocean_ice)):
     print(WEDD_timeseries_ocean_ice[i], IND_timeseries_ocean_ice[i], ROSS_timeseries_ocean_ice[i], AMBEL_timeseries_ocean_ice[i], timeseries_ocean_ice[i], file=f)
 f.close()
 
-pl.figure()
-pl.plot(timeseries_ocean_ice, label='Circumpolar', marker='.')
-pl.plot(WEDD_timeseries_ocean_ice, label='Weddell', marker='.')
-pl.plot(IND_timeseries_ocean_ice, label='Indian', marker='.')
-pl.plot(ROSS_timeseries_ocean_ice, label='Ross', marker='.')
-pl.plot(AMBEL_timeseries_ocean_ice, label='Amundsen-Bellingshausen', marker='.')
-pl.legend(loc='best', prop={'size':6})
-pl.title('ocean - ice (m) (SAR) offset timeseries')
-pl.xlabel('Month (from Jan 2011)')
-pl.ylabel('ocean - ice (m) (SAR) offset')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/ocean_ice_timeseries.png', format='png')
+fig = pl.figure()
+pl.plot(dates, timeseries_ocean_ice, label='Circumpolar', marker='.')
+pl.plot(dates, WEDD_timeseries_ocean_ice, label='Weddell', marker='.')
+pl.plot(dates, IND_timeseries_ocean_ice, label='Indian', marker='.')
+pl.plot(dates, ROSS_timeseries_ocean_ice, label='Ross', marker='.')
+pl.plot(dates, AMBEL_timeseries_ocean_ice, label='Amundsen-Bellingshausen', marker='.')
+pl.legend(loc='lower right', prop={'size':6})
+fig.autofmt_xdate()
+pl.ylabel('SAR$_\mathrm{ocean}$ - SAR$_\mathrm{lead}$ offset (m)')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/ocean_ice_timeseries.png', format='png')
 pl.close()
 
 average_circumpolar_offset_ocean_ice /= 5
 
 print(average_circumpolar_offset_ocean_ice)
+
+f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ocean-ice_offset.dat', 'w')
+for mnth in range(len(average_circumpolar_offset_ocean_ice)):
+    print(mnth + 1, average_circumpolar_offset_ocean_ice[mnth], file=f)
+
+## Calculate the average offset for use as a constant (time) offset
+constant_ocean_ice_offset = np.nanmean(timeseries_ocean_ice)
+print(mnth + 2, constant_ocean_ice_offset, file=f)
+f.close()
 
 print('January ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[0])
 print('Febuary ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[1])
@@ -230,8 +321,6 @@ print('December ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[
 #November ocean-ice (SAR) offset:  0.0504626853533
 #December ocean-ice (SAR) offset:  0.04950011136
 
-## Calculate the average offset for use as a constant (time) offset
-constant_ocean_ice_offset = np.nanmean(timeseries_ocean_ice)
 print('Constant ocean-ice (SAR) offset: ', constant_ocean_ice_offset)
 
 #Constant ocean-ice (SAR) offset:  0.0561588967006

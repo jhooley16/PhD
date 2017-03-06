@@ -56,11 +56,12 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             stereo_x, stereo_y = m(grid_lons, grid_lats)
         
             m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_filt)), cmap='RdBu_r')
-            m.colorbar()
-            pl.clim([0, -2.25])
+            c = m.colorbar()
+            c.set_label('DOT (m)')
+            pl.clim(0, -2.3)
             #pl.clim(np.mean(np.ma.masked_invalid(dot_filt)) + 3*np.std(np.ma.masked_invalid(dot_filt)), np.mean(np.ma.masked_invalid(dot_filt)) - 3*np.std(np.ma.masked_invalid(dot_filt)))
-            m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_filt)), [20,])
-            pl.savefig('Figures/' + year + month + '_DOT_filt.png', format='png', transparent=True, dpi=300)
+            m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_filt)), [20,], colors='k')
+            pl.savefig('Figures/' + year + month + '_DOT_filt.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
             pl.close()
 
             nc = Dataset(year + month + '_DOT_filt.nc', 'w')

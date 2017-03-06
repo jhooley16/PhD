@@ -109,9 +109,7 @@ m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr)),
 m.colorbar()
 pl.clim(1, -1)
 m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_pvalues)), [0.2], color='k')
-
-#pl.title('Correlation between SAM and CryoSat-2 Altimetry')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation.png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation.png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -131,8 +129,7 @@ m.colorbar()
 pl.clim(1, -1)
 m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.2], color='k')
 
-#pl.title('Correlation between SAM and CryoSat-2 Altimetry')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_no_offset.png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_no_offset.png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -151,9 +148,7 @@ m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_3_anom_xcorr)
 m.colorbar()
 pl.clim(1, -1)
 m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_3_anom_xcorr_pvalues)), [0.2], color='k')
-
-#pl.title('Correlation between SAM and CryoSat-2 Altimetry')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_constant_offset.png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_constant_offset.png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -172,7 +167,7 @@ m.pcolor(stereo_x, stereo_y, -(np.transpose(np.ma.masked_invalid(dot_anom_xcorr)
 m.colorbar()
 pl.clim(0.1, -0.1)
 pl.title('Correlation (SAM CS-2) difference between Seasonal and Constant offsets')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_seasonal-constant_offset.png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_seasonal-constant_offset.png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 ## Save a timeseries of the DOT anomaly within the region where the SAM correlation is good (and negative)

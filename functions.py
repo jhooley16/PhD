@@ -23,14 +23,14 @@ def month_data(directory, month):
         lon_sub = []
         ssh_sub = []
         ice_conc_sub = []
-        
+    
         surface_sub_asc = []
         time_sub_asc = []
         lat_sub_asc = []
         lon_sub_asc = []
         ssh_sub_asc = []
         ice_conc_sub_asc = []
-        
+    
         surface_sub_desc = []
         time_sub_desc = []
         lat_sub_desc = []
@@ -45,8 +45,8 @@ def month_data(directory, month):
             if columns[1] == '1':
                 # If data point is from open ocean (1) or from a lead (2)
                 if columns[0] == '1' or columns[0] == '2':
-                    # If the ssh is less than 3 m from the mean ssh
-                    if abs(float(columns[7]) - float(columns[8])) <= 3.:
+                    # If the ssh is less than 0.3 m from the mean ssh
+                    if abs(float(columns[7]) - float(columns[8])) <= .3:
                         surface_sub.append(float(columns[0]))
                         time_sub.append(float(columns[4]))
                         lat_sub.append(float(columns[5]))
@@ -72,11 +72,11 @@ def month_data(directory, month):
                     # If the value is greater than 3 std from the mean
                     if np.mean(ssh_sub_desc) - 3*np.std(ssh_sub_desc) > ssh_sub_desc[issh] > np.mean(ssh_sub_desc) + 3*np.std(ssh_sub_desc):
                         bad_elements.append(issh)
-                for issh in range(len(ssh_sub_desc)-1):
+                for issh in range(len(ssh_sub_desc) - 1):
                     # If the gradient between this point and the next point is greater than .5 m
-                    if abs(ssh_sub_desc[issh] - ssh_sub_desc[issh + 1]) > .5:
+                    if abs(ssh_sub_desc[issh] - ssh_sub_desc[issh + 1]) > .25:
                         bad_elements.append(issh + 1)
-            
+        
                 # remove the points that meet the above criteria
                 # In reverse order to avoid index problems
                 for bad in sorted(np.unique(bad_elements), reverse=True):
@@ -96,11 +96,15 @@ def month_data(directory, month):
                 input_ssh.close()
                 input_ice.close()
                 
-                os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
-                os.system('gmt filter1d ../INPUT_ice.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
+#                 pl.figure()
+#                 
+#                 pl.plot(lat_sub_desc, ssh_sub_desc, label='Unfiltered Data')
                 
+                os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.2 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
+                os.system('gmt filter1d ../INPUT_ice.dat -Fg0.2 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
+            
                 os.system('rm ../INPUT_ssh.dat ../INPUT_ice.dat')
-                
+            
                 output_ssh = open('../OUTPUT_ssh.dat', 'r')
                 lat_sub_desc = []
                 ssh_sub_desc = []
@@ -110,7 +114,7 @@ def month_data(directory, month):
                     lat_sub_desc.append(-float(columns[0]))
                     ssh_sub_desc.append(float(columns[1]))
                 output_ssh.close()
-                
+            
                 output_ice = open('../OUTPUT_ice.dat', 'r')
                 ice_conc_sub_desc = []
                 for line in output_ice:
@@ -119,8 +123,15 @@ def month_data(directory, month):
                     ice_conc_sub_desc.append(float(columns[1]))
                 output_ice.close()
                 
+#                 pl.plot(lat_sub_desc, ssh_sub_desc, 'r', label='Filtered Data')
+#                 pl.legend(loc='best')
+#                 pl.ylabel('Sea Surface Height (m)')
+#                 pl.xlabel('Latitude')
+#                 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Processed/Figures/filtered_along_track_example.png', doi=300, transparent=True, bbox_inches='tight')
+#                 pl.close()
+            
                 os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ice.dat')
-                
+#                 pause
                 if len(lat_sub_desc) == len(lon_sub_desc):
                     surface += surface_sub_desc
                     time += time_sub_desc
@@ -128,7 +139,6 @@ def month_data(directory, month):
                     lon += lon_sub_desc
                     ssh += ssh_sub_desc
                     ice_conc += ice_conc_sub_desc
-
             ###### ASCENDING tracks ########
             ascending = np.where(np.gradient(lat_sub) > 0.)[0]
             # If there are any ascending tracks
@@ -146,11 +156,11 @@ def month_data(directory, month):
                     # If the value is greater than 3 std from the mean
                     if np.mean(ssh_sub_asc) - 3*np.std(ssh_sub_asc) > ssh_sub_asc[issh] > np.mean(ssh_sub_asc) + 3*np.std(ssh_sub_asc):
                         bad_elements.append(issh)
-                for issh in range(len(ssh_sub_asc)-1):
+                for issh in range(len(ssh_sub_asc) - 1):
                     # If the gradient between this point and the next point is greater than .5 m
                     if abs(ssh_sub_asc[issh] - ssh_sub_asc[issh + 1]) > .5:
                         bad_elements.append(issh + 1)
-                
+            
                 for bad in sorted(np.unique(bad_elements), reverse=True):
                     del surface_sub_asc[bad]
                     del time_sub_asc[bad]
@@ -167,12 +177,12 @@ def month_data(directory, month):
                     print(lat_sub_asc[ilat], ice_conc_sub_asc[ilat], file=input_ice)
                 input_ssh.close()
                 input_ice.close()
-                
-                os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
-                os.system('gmt filter1d ../INPUT_ice.dat -Fg0.3 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
-                
+            
+                os.system('gmt filter1d ../INPUT_ssh.dat -Fg0.2 -D0.001 -fi0y -E > ../OUTPUT_ssh.dat')
+                os.system('gmt filter1d ../INPUT_ice.dat -Fg0.2 -D0.001 -fi0y -E > ../OUTPUT_ice.dat')
+            
                 os.system('rm ../INPUT_ssh.dat ../INPUT_ice.dat')
-                
+            
                 output_ssh = open('../OUTPUT_ssh.dat', 'r')
                 lat_sub_asc = []
                 ssh_sub_asc = []
@@ -182,7 +192,7 @@ def month_data(directory, month):
                     lat_sub_asc.append(float(columns[0]))
                     ssh_sub_asc.append(float(columns[1]))
                 output_ssh.close()
-                
+            
                 output_ice = open('../OUTPUT_ice.dat', 'r')
                 ice_conc_sub_asc = []
                 for line in output_ice:
@@ -190,9 +200,9 @@ def month_data(directory, month):
                     columns = line.split()
                     ice_conc_sub_asc.append(float(columns[1]))
                 output_ice.close()
-                
+            
                 os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ice.dat')
-                
+            
                 if len(lat_sub_asc) == len(lon_sub_asc):
                     surface += surface_sub_asc
                     time += time_sub_asc
@@ -200,12 +210,11 @@ def month_data(directory, month):
                     lon += lon_sub_asc
                     ssh += ssh_sub_asc
                     ice_conc += ice_conc_sub_asc
-
-    # Identify the surface and tracker
-    # Generate a list of the retracker used at each point
+                    
+    # Calculate the CS-2 mode with which the data points were measured
     mode = mode_points(lat, lon, month)
 
-    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc, 'surface': surface, 'mode': mode, 'time': time}
+    return {'lat': lat, 'lon': lon, 'ssh': ssh, 'ice_conc': ice_conc, 'surface': surface, 'time': time, 'mode': mode}
 
 def stereo(lat, lon):
     """Convert Lat and Lon (Polar) coordinates to stereographic (x, y) coordinates (km).
@@ -292,6 +301,34 @@ def grid05(data, lon_data, lat_data, lat_res, lon_res):
     return {'Grid':xy_grid, 'Count':xy_count, 'Lon':x_range, 'Lat':y_range}
 
 def apply_offset(month, boundary):
+    if month == 'constant':
+        Imnth = 13 - 1
+    else:
+        Imnth = int(month) - 1
+
+    if boundary == 'SAR_ocean':
+        f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/LRM-SAR_offset.dat', 'r')
+        LRM_SAR_offset = []
+        for line in f:
+            line.strip()
+            column = line.split()
+            LRM_SAR_offset = np.append(LRM_SAR_offset, float(column[1]))
+        f.close()
+        
+        return LRM_SAR_offset[Imnth]
+        
+    if boundary == 'ice':
+        f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ocean-ice_offset.dat', 'r')
+        ocean_ice_offset = []
+        for line in f:
+            line.strip()
+            column = line.split()
+            ocean_ice_offset = np.append(ocean_ice_offset, float(column[1]))
+        f.close()
+        
+        return ocean_ice_offset[Imnth]
+
+def apply_offset_original(month, boundary):
     if boundary == 'SAR_ocean':
         if month == '01':
             return 0.005
@@ -402,11 +439,11 @@ def mode_points(lat, lon, month):
         return inside
 
     # Load the polygon data
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/ModeMask/SARIn_polygon.nc', 'r')
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ModeMask/SARIn_polygon.nc', 'r')
     lat_poly_SARIn = nc.variables['Lat_SARIn'][:]
     lon_poly_SARIn = nc.variables['Lon_SARIn'][:]
     nc.close()
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/ModeMask/SAR_polygon.nc', 'r')
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ModeMask/SAR_polygon.nc', 'r')
     lat_poly_SAR = nc.variables['Lat_SAR_' + month][:]
     lon_poly_SAR = nc.variables['Lon_SAR_' + month][:]
     nc.close()
@@ -427,12 +464,17 @@ def mode_points(lat, lon, month):
     for point in xy_pair:
         point_x = point[0]
         point_y = point[1]
-        if in_me(point_x, point_y, polygon_SAR) == False and in_me(point_x, point_y, polygon_SARIn) == False:
+        in_SAR = in_me(point_x, point_y, polygon_SAR)
+        in_SARIn = in_me(point_x, point_y, polygon_SARIn)
+        
+        if in_SAR == False and in_SARIn == False:
             point_type.append(0)
-        elif in_me(point_x, point_y, polygon_SAR) == True and in_me(point_x, point_y, polygon_SARIn) == False:
+        elif in_SAR == True and in_SARIn == False:
             point_type.append(1)
-        elif in_me(point_x, point_y, polygon_SAR) == True and in_me(point_x, point_y, polygon_SARIn) == True:
+        elif in_SARIn == True:
             point_type.append(2)
+        else:
+            print('Length of lat and mode: ', len(mode) == len(lat))
     
     return point_type
 

@@ -102,13 +102,13 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             grid_lats, grid_lons = np.meshgrid(grid_lat, grid_lon)
             stereo_x, stereo_y = m(grid_lons, grid_lats)
             m.pcolor(stereo_x, stereo_y, np.ma.masked_invalid(grid_dot), cmap='RdBu_r')
-            m.colorbar()
+            c = m.colorbar()
+            c.set_label('DOT (m)')
             pl.clim(0, -2.5)
             #pl.clim(np.mean(np.ma.masked_invalid(grid_dot)) - 3*np.std(np.ma.masked_invalid(grid_dot)), np.mean(np.ma.masked_invalid(grid_dot)) + 3*np.std(np.ma.masked_invalid(grid_dot)))
             m.contour(stereo_x, stereo_y, np.ma.masked_invalid(grid_ice), [20,])
             pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/'+ year +'/Figures/' 
-                + year + month + '_DOT_gridded_' + lon_resolution + 'x' 
-                + lat_resolution + '.png', format='png', transparent=True, dpi=300)
+                + year + month + '_DOT_gridded_.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
             pl.close()
     
             # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded     
@@ -131,13 +131,13 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             longitudes.standard_name = 'longitude'
             longitudes.units = 'degrees_east'
             gridded_dot.long_name = 'dynamic_ocean_topography'
-            gridded_dot.standard_name = 'sea_surface_height_above_EGM2008_geoid_seasonal_retracker_offset_correction'
+            gridded_dot.standard_name = 'sea_surface_height_above_EIGEN6c4_geoid_seasonal_retracker_offset_correction'
             gridded_dot.units = 'm'
             gridded_dot_2.long_name = 'dynamic_ocean_topography'
-            gridded_dot_2.standard_name = 'sea_surface_height_above_EGM2008_geoid_no_retracker_offset_correction'
+            gridded_dot_2.standard_name = 'sea_surface_height_above_EIGEN6c4_geoid_no_retracker_offset_correction'
             gridded_dot_2.units = 'm'
             gridded_dot_3.long_name = 'dynamic_ocean_topography'
-            gridded_dot_3.standard_name = 'sea_surface_height_above_EGM2008_geoid_constant_retracker_offset_correction'
+            gridded_dot_3.standard_name = 'sea_surface_height_above_EIGEN6c4_geoid_constant_retracker_offset_correction'
             gridded_dot_3.units = 'm'
             gridded_ice.long_name = 'sea_ice_concentration'
             gridded_ice.standard_name = 'sea_ice_concentration'
@@ -169,7 +169,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
                 #pl.clim(0, -2.5)
                 #pl.clim(np.mean(np.ma.masked_invalid(grid_dot)) - 3*np.std(np.ma.masked_invalid(grid_dot)), np.mean(np.ma.masked_invalid(grid_dot)) + 3*np.std(np.ma.masked_invalid(grid_dot)))
                 m.contour(stereo_x, stereo_y, np.ma.masked_invalid(grid_ice), [20,])
-                pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/offset_seasonal_' + month + '.png', format='png', transparent=True, dpi=300)
+                pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/offset_seasonal_' + month + '.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
                 pl.close()
                 
                 pl.figure()
@@ -188,7 +188,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
                 #pl.clim(0, -2.5)
                 #pl.clim(np.mean(np.ma.masked_invalid(grid_dot)) - 3*np.std(np.ma.masked_invalid(grid_dot)), np.mean(np.ma.masked_invalid(grid_dot)) + 3*np.std(np.ma.masked_invalid(grid_dot)))
                 m.contour(stereo_x, stereo_y, np.ma.masked_invalid(grid_ice), [20,])
-                pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeperateModes/Figures/offset_constant_' + month + '.png', format='png', transparent=True, dpi=300)
+                pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/offset_constant_' + month + '.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
                 pl.close()
             
             print('Complete!')

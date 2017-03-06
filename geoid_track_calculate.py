@@ -11,48 +11,38 @@ import numpy as np
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
         if os.path.isfile('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/' + year + month + '_raw.nc'):
-            
             print(year, month)
-            
-            raw_file = '/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/' + year + month + '_raw.nc'
 
-            nc = Dataset(raw_file, 'r')
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/' + year + month + '_raw.nc', 'r')
             lat = nc.variables['latitude'][:]
             lon = nc.variables['longitude'][:]
             nc.close()
+            
             # Construct a two column ascii table for the location of points
-
-            input_file = open('/Users/jmh2g09/Documents/PhD/Geoid/INPUT.txt', 'w')
+            input_file = open('/Users/jmh2g09/Documents/PhD/Data/Geoid/INPUT.txt', 'w')
             for i in range(0, len(lat)):
                 print(lon[i], lat[i], file=input_file)
             input_file.close()
 
             # insert this into gmt function 'grdtrack' and interpolate the points
+            os.system('gmt grdtrack /Users/jmh2g09/Documents/PhD/Data/Geoid/INPUT.txt -f0x,1y -G/Users/jmh2g09/Documents/PhD/Data/Geoid/EIGEN6c4/EIGEN6c4_GRID.nc > /Users/jmh2g09/Documents/PhD/Data/Geoid/OUTPUT.txt')
 
-            geoid_file = '/Users/jmh2g09/Documents/PhD/Geoid/EIGEN6c4/EIGEN6c4_GRID.nc'
-            outfile = '/Users/jmh2g09/Documents/PhD/Geoid/OUTPUT.txt'
-
-            os.system('gmt grdtrack /Users/jmh2g09/Documents/PhD/Geoid/INPUT.txt -f0x,1y -G' + geoid_file + ' > ' + outfile)
-
+            os.system('rm /Users/jmh2g09/Documents/PhD/Data/Geoid/INPUT.txt')
             # open the output geoid data
-
             lon_new = []
             lat_new = []
             geoid = []
-            f = open(outfile, 'r')
+            f = open('/Users/jmh2g09/Documents/PhD/Data/Geoid/OUTPUT.txt', 'r')
             for line in f:
                 columns = line.strip().split()
-                
                 lon_new.append(float(columns[0]))
                 lat_new.append(float(columns[1]))
                 geoid.append(float(columns[2]))
             f.close()
-
-            file = '/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/' + year + month + '_geoid_track.nc'
-            nc = Dataset(file, 'w')
-
+            os.system('rm /Users/jmh2g09/Documents/PhD/Data/Geoid/OUTPUT.txt')
+            
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/' + year + month + '_geoid_track.nc', 'w')
             nc.createDimension('station', np.size(lat_new))
-
             latitudes = nc.createVariable('latitude', float, ('station',))
             longitudes = nc.createVariable('longitude', float, ('station',))
             geoid_height = nc.createVariable('geoid_height', float, ('station',))

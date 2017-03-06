@@ -155,7 +155,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
     m.fillcontinents(zorder=10)
     m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
     m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-        
+    
     grid_lats, grid_lons = np.meshgrid(lat, lon)
     stereo_x, stereo_y = m(grid_lons, grid_lats)
     
@@ -166,10 +166,8 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
 
     location_x, location_y = m(station_lon, station_lat)
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
-
-    pl.title('CryoSat-2 Altimetry and ' + station_name.replace('_', ' ') + ' Correlation')
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation.png',
-        transparent=True, dpi=300)
+        transparent=True, dpi=300, bbox_inches='tight')
     pl.close()
     
     pl.figure()
@@ -191,10 +189,8 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
 
     location_x, location_y = m(station_lon, station_lat)
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
-
-    pl.title('CryoSat-2 Altimetry (no offset) and ' + station_name.replace('_', ' ') + ' Correlation')
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_no_offset.png',
-        transparent=True, dpi=300)
+        transparent=True, dpi=300, bbox_inches='tight')
     pl.close()
     
     pl.figure()
@@ -217,9 +213,8 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
     location_x, location_y = m(station_lon, station_lat)
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
 
-    pl.title('CryoSat-2 Altimetry (constant offset) and ' + station_name.replace('_', ' ') + ' Correlation')
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_constant_offset.png',
-        transparent=True, dpi=300)
+        transparent=True, dpi=300, bbox_inches='tight')
     pl.close()
     
     pl.figure()
@@ -241,7 +236,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
     pl.title('CS-2 and ' + station_name.replace('_', ' ') + ' seasonal - constant offset')
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_seasonal-constant_offset.png',
-        transparent=True, dpi=300)
+        transparent=True, dpi=300, bbox_inches='tight')
     pl.close()
 
 DOT_dates = []
@@ -276,5 +271,5 @@ pl.xticks(rotation='vertical')
 fig.autofmt_xdate()
 #pl.ylim([-0.2, 0.2])
 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/in_situ_ts.png',
-    transparent=True, dpi=300)
+    transparent=True, dpi=300, bbox_inches='tight')
 pl.close()

@@ -1,6 +1,6 @@
 from netCDF4 import Dataset
 import numpy as np
-from scipy import interpolate
+from scipy import interpolate, signal
 from datetime import date
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as pl
@@ -10,7 +10,7 @@ import functions as funct
 ### Sea Level Pressure
 SSP_file = '/Users/jmh2g09/Documents/PhD/Data/SSPressure/ERA_Interim_mean_sea_level_pressure.nc'
 
-## Load SSP data
+# Load SSP data
 nc = Dataset(SSP_file, 'r')
 SSP_lat = nc.variables['latitude'][:]
 SSP_lon = nc.variables['longitude'][:]
@@ -64,9 +64,21 @@ nc = Dataset(GRACE_file, 'r')
 GRACE_lat = nc.variables['lat'][:]
 GRACE_lon = nc.variables['lon'][:]
 GRACE_time = nc.variables['time_bounds'][:]
-# Convert GRACE lwe thickness to m (from cm) 
-GRACE_data_pre = nc.variables['lwe_thickness'][:] / 100# (time, lat, lon)
+# Convert GRACE lwe thickness to m (from cm)
+GRACE_data_pre_2 = nc.variables['lwe_thickness'][:] / 100# (time, lat, lon)
 nc.close()
+
+GRACE_lon = np.append([-.5], GRACE_lon)
+GRACE_lon = np.append(GRACE_lon, [360.5])
+
+GRACE_data_pre = np.full((149, 180, 362), fill_value=np.NaN)
+for ilon in range(362):
+    if ilon == 0:
+        GRACE_data_pre[:, :, ilon] = GRACE_data_pre_2[:, :, -1]
+    elif 0 < ilon <= 360:
+        GRACE_data_pre[:, :, ilon] = GRACE_data_pre_2[:, :, ilon - 1]
+    elif ilon == 361:
+        GRACE_data_pre[:, :, ilon] = GRACE_data_pre_2[:, :, 0]
 
 # Apply the GMT land mask
 nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
@@ -130,9 +142,10 @@ for i in range(len(GRACE_time)):
 
 GRACE_data_post = np.array(GRACE_data_post)
 
-GRACE_mean = np.nanmean(GRACE_data_post, axis=0)
+GRACE_data_post[np.isnan(GRACE_data_post)] = 999
 
-GRACE_data_post_2 = GRACE_data_post - GRACE_mean
+GRACE_data_post_2 = signal.detrend(GRACE_data_post, axis=0)
+GRACE_data_post_2[GRACE_data_post > 100] = np.NaN
 
 # Load the missing month data
 missing_years = []
@@ -174,7 +187,11 @@ GRACE = np.full((64, 59, 361), fill_value=np.NaN)
 for ilat in range(59):
     for ilon in range(361):
         interp_ts = interpolate.interp1d(grace_ts, GRACE_data_post_2[:, ilat, ilon], kind='linear')
+        # Interpolate
         GRACE[:, ilat, ilon] = interp_ts(month_ts)
+
+for it in range(64):
+    GRACE[it, :, :] = GRACE[it, :, :] * ocean_mask
 
 ## Save the interpolated data in seperate .nc files
 
@@ -196,7 +213,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             grace_corrected = GRACE[A, :, :] - SSPA_ts_anom[A]
             
             GRACE_months[int(month)-1, :, :, int(year)-2010] = grace_corrected
-            
+
             nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/GRACE/' + year + month + '_GRACE.nc', 'w')
             nc.createDimension('lat', np.size(lat))
             nc.createDimension('lon', np.size(lon))
@@ -219,7 +236,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             GRACE_save[:] = grace_corrected
 
             nc.close()
-            
+
             pl.figure()
             pl.clf()
             m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
@@ -231,17 +248,18 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 
             grid_lats, grid_lons = np.meshgrid(lat, lon)
             stereo_x, stereo_y = m(grid_lons, grid_lats)
-        
+
             m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(grace_corrected)), cmap='RdBu_r')
             m.colorbar()
             pl.clim([-0.1, 0.1])
             pl.title('GRACE gravity anomalies Units: seawater thickness (m)')
-            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/GRACE/Figures/' + year + month + '_GRACE.png', transparent=True, dpi=300)
+            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/GRACE/Figures/' + year + month + '_GRACE.png', transparent=True, dpi=300, bbox_inches='tight')
             pl.close()
             
             A += 1
 
 GRACE_seasonal = np.nanmean(GRACE_months, axis=3)
+
 
 for imnth in range(12):
     pl.figure()
@@ -260,5 +278,5 @@ for imnth in range(12):
     m.colorbar()
     pl.clim([-0.08, 0.09])
     pl.title('GRACE gravity anomalies Units: seawater thickness (m)')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/GRACE/Figures/' + str(imnth+1) + '_GRACE_months.png', transparent=True, dpi=300)
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/GRACE/Figures/' + str(imnth+1) + '_GRACE_months.png', transparent=True, dpi=300, bbox_inches='tight')
     pl.close()

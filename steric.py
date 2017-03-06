@@ -4,6 +4,8 @@ from datetime import date
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as pl
 import functions as funct
+from scipy import signal
+import os
 
 steric_ts = []
 dot_ts = []
@@ -33,25 +35,45 @@ ice_months = np.full((59, 361, 12, 7), fill_value=np.NaN)
 trigger = False
 A = 0
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
-    
     # Cycle through the months
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-        if year == '2010' and month == '11':
-            trigger = True
-        if year == '2016' and month == '03':
-            trigger = False
-        
-        if trigger == True:
+        DOT_file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + year + '/Anomalies/' + year + month + '_DOT_anomaly.nc'
+        if os.path.isfile(DOT_file):
             dates.append(date(int(year), int(month), 15))
             
-            DOT_file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + year + '/Anomalies/' + year + month + '_DOT_anomaly.nc'
             # Load DOT
             nc = Dataset(DOT_file, 'r')
             lat = nc.variables['latitude'][:]
             lon = nc.variables['longitude'][:]
-            dot = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:] # (lat, lon)
             ice = nc.variables['sea_ice_concentration'][:]
             nc.close()
+            
+            ## Filter the dot file to match the resolution of GRACE
+            os.system('gmt grdfilter ' + DOT_file + '?"dynamic_ocean_topography_anomaly_seasonal_offset" -D4 -Fg3000 -Nr -f0y -f1x -GFILT.nc')
+            
+            nc = Dataset('FILT.nc', 'r')
+            dot = nc.variables['z'][:]
+            nc.close()
+            
+            os.system('rm FILT.nc')
+            
+#             pl.figure()
+#             pl.clf()
+#             m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+#             m.drawmapboundary()
+#             m.drawcoastlines(zorder=10)
+#             m.fillcontinents(zorder=10)
+#             m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#             m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+# 
+#             grid_lats, grid_lons = np.meshgrid(lat, lon)
+#             stereo_x, stereo_y = m(grid_lons, grid_lats)
+# 
+#             m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot)), cmap='RdBu_r')
+#             m.colorbar()
+#             pl.clim([-0.1, 0.1])
+#             pl.show()
+#             pl.close()
             
             dot[np.isnan(dot)] = 999
             
@@ -87,12 +109,14 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             ocean_mask[np.isnan(dot)] = np.NaN
             
             ice_mask[np.isnan(baristatic)] = np.NaN
-            ice_mask[np.isnan(dot)] = np.NaN
+            ice_mask[dot > 100] = np.NaN
             ice_mask[ice < 20] = np.NaN
+            
+            dot[dot > 100] = np.NaN
             
             # Calculate the steric
             steric = dot - baristatic
-            
+                        
             steric_months[:, :, int(month)-1, int(year)-2010] = steric
             
             ## Calculate the surface area of each cell
@@ -123,14 +147,15 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             A += 1
 
 fig = pl.figure()
-pl.plot(dates, dot_ts, label='DOT')
-pl.plot(dates, np.array(baristatic_ts) + .1, label='Baristatic DOT')
-pl.plot(dates, np.array(steric_ts) - .1, label='Steric DOT')
+pl.plot(dates, signal.detrend(np.array(dot_ts)), label='DOT')
+pl.plot(dates, signal.detrend(np.array(baristatic_ts)) + .1, label='GRACE')
+pl.plot(dates, signal.detrend(np.array(steric_ts)) - .1, label='Steric DOT')
+#pl.plot(dates, signal.detrend(np.array(sam_index)) - .2, label='SAM index')
 pl.legend(loc='best', prop={'size':8})
 pl.xticks(rotation='vertical')
 fig.autofmt_xdate()
 pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_timeseries.png', transparent=True, doi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_timeseries.png', transparent=True, doi=300, bbox_inches='tight')
 pl.close()
 
 steric_season = np.nanmean(steric_seasonal, axis=1)
@@ -142,17 +167,17 @@ SAM_season = np.nanmean(SAM_seasonal, axis=1)
 
 fig = pl.figure()
 pl.plot(range(1, 13), np.array(dot_season) * 100, label='DOT')
-pl.plot(range(1, 13), np.array(baristatic_season) * 100, label='Baristatic DOT')
+pl.plot(range(1, 13), np.array(baristatic_season) * 100, label='GRACE')
 pl.plot(range(1, 13), np.array(steric_season) * 100, label='Steric DOT')
 pl.plot(range(1, 13), np.array(ice_extent_season) / 5000000, label='Ice Extent (*5e6)')
-pl.plot(range(1, 13), wind_season - 7., label='wind 10m u-component (+ 7)')
+#pl.plot(range(1, 13), wind_season - 7., label='wind 10m u-component (+ 7)')
 pl.plot(range(1, 13), SAM_season, label='SAM Index')
 pl.xticks(range(1, 13))
 pl.xlim([1, 12])
 pl.legend(loc='best', prop={'size':8})
 pl.ylabel('DOT (cm)')
 pl.xlabel('Month')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_seasonal.png', transparent=True, doi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_seasonal.png', transparent=True, doi=300, bbox_inches='tight')
 pl.close()
 
 steric_months_avg = np.nanmean(steric_months, axis=3)
@@ -179,5 +204,5 @@ for imnth in range(12):
     m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_months_avg[:, :, imnth])), colors='k', levels=[20])
 
     pl.title('Steric height estimated from (Altimetry - GRACE), (m)')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_' + str(imnth + 1) + '.png', transparent=True, dpi=300)
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Steric/steric_' + str(imnth + 1) + '.png', transparent=True, dpi=300, bbox_inches='tight')
     pl.close()
