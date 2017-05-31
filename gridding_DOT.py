@@ -108,7 +108,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             #pl.clim(np.mean(np.ma.masked_invalid(grid_dot)) - 3*np.std(np.ma.masked_invalid(grid_dot)), np.mean(np.ma.masked_invalid(grid_dot)) + 3*np.std(np.ma.masked_invalid(grid_dot)))
             m.contour(stereo_x, stereo_y, np.ma.masked_invalid(grid_ice), [20,])
             pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/'+ year +'/Figures/' 
-                + year + month + '_DOT_gridded_.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
+                + year + month + '_DOT_gridded.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
             pl.close()
     
             # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded     

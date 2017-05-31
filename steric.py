@@ -49,7 +49,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc.close()
             
             ## Filter the dot file to match the resolution of GRACE
-            os.system('gmt grdfilter ' + DOT_file + '?"dynamic_ocean_topography_anomaly_seasonal_offset" -D4 -Fg3000 -Nr -f0y -f1x -GFILT.nc')
+            os.system('gmt grdfilter ' + DOT_file + '?"dynamic_ocean_topography_anomaly_seasonal_offset" -D4 -Fg6000 -Nr -f0y -f1x -GFILT.nc')
             
             nc = Dataset('FILT.nc', 'r')
             dot = nc.variables['z'][:]
@@ -74,6 +74,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
 #             pl.clim([-0.1, 0.1])
 #             pl.show()
 #             pl.close()
+#             pause
             
             dot[np.isnan(dot)] = 999
             
@@ -171,7 +172,7 @@ pl.plot(range(1, 13), np.array(baristatic_season) * 100, label='GRACE')
 pl.plot(range(1, 13), np.array(steric_season) * 100, label='Steric DOT')
 pl.plot(range(1, 13), np.array(ice_extent_season) / 5000000, label='Ice Extent (*5e6)')
 #pl.plot(range(1, 13), wind_season - 7., label='wind 10m u-component (+ 7)')
-pl.plot(range(1, 13), SAM_season, label='SAM Index')
+#pl.plot(range(1, 13), SAM_season, label='SAM Index')
 pl.xticks(range(1, 13))
 pl.xlim([1, 12])
 pl.legend(loc='best', prop={'size':8})

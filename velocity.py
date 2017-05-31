@@ -31,7 +31,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc = Dataset(file, 'r')
             lat = nc.variables['latitude'][:]
             lon = nc.variables['longitude'][:]
-            dot  = nc.variables['dynamic_ocean_topography'][:] # meters
+            dot  = nc.variables['dynamic_ocean_topography_seasonal_offset'][:] # meters
             ice_conc = nc.variables['sea_ice_concentration'][:]
             nc.close()
             

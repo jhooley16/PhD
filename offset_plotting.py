@@ -16,9 +16,9 @@ ocean_ice_constant = np.full(len(LRM_SAR_offset), fill_value=0) + funct.apply_of
 pl.figure()
 pl.grid()
 pl.plot(range(1, 13), LRM_SAR_offset * 100, label='SAR$_{ocean}$', color='b')
-pl.plot(range(1, 13), LRM_SAR_constant * 100, label='SAR$_{ocean}$ Constant $=$ ' + str(np.round(funct.apply_offset('constant', 'SAR_ocean') * 100, 2)) + ' cm', color='b', ls='--')
+pl.plot(range(1, 13), LRM_SAR_constant * 100, label='SAR$_{ocean}$ Constant $=$ ' + str(np.round(funct.apply_offset('constant', 'SAR_ocean') * 100, 1)) + ' cm', color='b', ls='--')
 pl.plot(range(1, 13), ocean_ice_offset * 100, label='SAR$_{lead}$', color='r')
-pl.plot(range(1, 13), ocean_ice_constant * 100, label='SAR$_{lead}$ Constant $=$ ' + str(np.round(funct.apply_offset('constant', 'ice') * 100, 2)) + ' cm', color='r', ls='--')
+pl.plot(range(1, 13), ocean_ice_constant * 100, label='SAR$_{lead}$ Constant $=$ ' + str(np.round(funct.apply_offset('constant', 'ice') * 100, 1)) + ' cm', color='r', ls='--')
 my_xticks = ['Jan','Feb','Mar','Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 pl.xticks(range(1, 13), my_xticks)
 pl.xlim(1, 12)

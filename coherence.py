@@ -12,13 +12,10 @@ from datetime import date
 
 ssha1_cat = np.full((64, 59, 361), fill_value=np.NaN)
 ssha2_cat = np.full((64, 59, 361), fill_value=np.NaN)
-ssha3_cat = np.full((64, 59, 361), fill_value=np.NaN)
 ssha_ice_ts = np.full(64, fill_value=np.NaN)
 ssha_ice_ts_2 = np.full(64, fill_value=np.NaN)
-ssha_ice_ts_3 = np.full(64, fill_value=np.NaN)
 ssh_season_1 = np.full((7, 12), fill_value=np.NaN)
 ssh_season_2 = np.full((7, 12), fill_value=np.NaN)
-ssh_season_3 = np.full((7, 12), fill_value=np.NaN)
 DOT_dates = []
 cat = 0
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
@@ -38,13 +35,11 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             lon = nc.variables['longitude'][:]
             ssha1_cat[cat, :, :] = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:]
             ssha2_cat[cat, :, :] = nc.variables['dynamic_ocean_topography_anomaly_constant_offset'][:]
-            ssha3_cat[cat, :, :] = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
             nc.close()
             
             nc = Dataset(filepath_ice, 'r')
             ssha_ice_1 = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:]
             ssha_ice_2 = nc.variables['dynamic_ocean_topography_anomaly_constant_offset'][:]
-            ssha_ice_3 = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
             nc.close()
             
             DOT_dates.append(date(int(year), int(month), 15))
@@ -58,44 +53,36 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             
             ssha_ice_ts[cat] = np.nansum(ssha_ice_1 * S) / total_area_ice
             ssha_ice_ts_2[cat] = np.nansum(ssha_ice_2 * S) / total_area_ice
-            ssha_ice_ts_3[cat] = np.nansum(ssha_ice_3 * S) / total_area_ice
             
             ssh_season_1[int(year) - 2010, int(month) - 1] = np.nansum(ssha_ice_1 * S) / total_area_ice
             ssh_season_2[int(year) - 2010, int(month) - 1] = np.nansum(ssha_ice_2 * S) / total_area_ice
-            ssh_season_3[int(year) - 2010, int(month) - 1] = np.nansum(ssha_ice_3 * S) / total_area_ice
             
             cat += 1
 
 coherr = np.full((59, 361, 2), fill_value=np.NaN)
 coherr_2 = np.full((59, 361, 2), fill_value=np.NaN)
-coherr_3 = np.full((59, 361, 2), fill_value=np.NaN)
 for ilat in range(len(lat)):
     for ilon in range(len(lon)):
-        if np.any(np.isfinite(ssha3_cat[:, ilat, ilon])):
-            #A = ssha1_cat[:, ilat, ilon]
+        if np.any(np.isfinite(ssha1_cat[:, ilat, ilon])):
+            A = ssha1_cat[:, ilat, ilon]
             #A = ssha2_cat[:, ilat, ilon]
-            A = ssha3_cat[:, ilat, ilon]
+            #A = ssha3_cat[:, ilat, ilon]
             
             f, Cxy = coherence(ssha_ice_ts, funct.inpaint_nans(A), nperseg=3)
             coherr[ilat, ilon, :] = Cxy
             
             f, Cxy = coherence(ssha_ice_ts_2, funct.inpaint_nans(A), nperseg=3)
             coherr_2[ilat, ilon, :] = Cxy
-            
-            f, Cxy = coherence(ssha_ice_ts_3, funct.inpaint_nans(A), nperseg=3)
-            coherr_3[ilat, ilon, :] = Cxy
 
-station_lon = [320, 30, 135, 190]
+station_lon = [320, 35, 145, 190]
 station_lat = [10, 22, 28, 5]
 
 ssh_seasonal_1 = np.nanmean(ssh_season_1, axis=0)
 ssh_seasonal_2 = np.nanmean(ssh_season_2, axis=0)
-ssh_seasonal_3 = np.nanmean(ssh_season_3, axis=0)
 
 pl.figure()
 pl.plot(range(1, 13), ssh_seasonal_1, label='Seasonal Offset')
 pl.plot(range(1, 13), ssh_seasonal_2, label='Constant Offset')
-pl.plot(range(1, 13), ssh_seasonal_3, label='No Offset')
 pl.legend(loc='best')
 pl.ylabel('SSH Anomaly (m)')
 pl.xlabel('Month')
@@ -104,19 +91,19 @@ pl.close()
 
 fig = pl.figure()
 pl.plot(DOT_dates, ssha_ice_ts, label='permanant ice-region average (seasonal)', color='b', ls='-')
-pl.plot(DOT_dates, ssha_ice_ts_3, label='permanant ice-region average (constant)', color='b', ls='--')
+pl.plot(DOT_dates, ssha_ice_ts_2, label='permanant ice-region average (constant)', color='b', ls='--')
 
 pl.plot(DOT_dates, ssha1_cat[:, station_lat[0], station_lon[0]] - 0.1, label='1 (-0.1)', color='k', ls='-')
-pl.plot(DOT_dates, ssha3_cat[:, station_lat[0], station_lon[0]] - 0.1, label=None, color='k', ls='--')
+pl.plot(DOT_dates, ssha2_cat[:, station_lat[0], station_lon[0]] - 0.1, label=None, color='k', ls='--')
 
 pl.plot(DOT_dates, ssha1_cat[:, station_lat[1], station_lon[1]] - 0.2, label='2 (-0.2)', color='r', ls='-')
-pl.plot(DOT_dates, ssha3_cat[:, station_lat[1], station_lon[1]] - 0.2, label=None, color='r', ls='--')
+pl.plot(DOT_dates, ssha2_cat[:, station_lat[1], station_lon[1]] - 0.2, label=None, color='r', ls='--')
 
 pl.plot(DOT_dates, ssha1_cat[:, station_lat[2], station_lon[2]] + 0.1, label='3 (+0.1)', color='g', ls='-')
-pl.plot(DOT_dates, ssha3_cat[:, station_lat[2], station_lon[2]] + 0.1, label=None, color='g', ls='--')
+pl.plot(DOT_dates, ssha2_cat[:, station_lat[2], station_lon[2]] + 0.1, label=None, color='g', ls='--')
 
 pl.plot(DOT_dates, ssha1_cat[:, station_lat[3], station_lon[3]] + 0.2, label='4 (+0.2)', color='y', ls='-')
-pl.plot(DOT_dates, ssha3_cat[:, station_lat[3], station_lon[3]] + 0.2, label=None, color='y', ls='--')
+pl.plot(DOT_dates, ssha2_cat[:, station_lat[3], station_lon[3]] + 0.2, label=None, color='y', ls='--')
 
 pl.xticks(rotation='vertical')
 fig.autofmt_xdate()
@@ -145,7 +132,7 @@ for num in range(len(f)):
         m.scatter(location_x[2], location_y[2], marker='$3$', s=60, color='k', zorder=100)
         m.scatter(location_x[3], location_y[3], marker='$4$', s=60, color='k', zorder=100)
         pl.title('Coherence at period: ' + str(np.round(1/f[num], 2)) + ' months')
-        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coherence/coherence_' + str(np.round(1/f[num], 2)) + '_months_none_alt_vs_seasonal_ice.png', dpi=300, transparent=True, bbx_inches='tight')
+        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coherence/coherence_' + str(np.round(1/f[num], 2)) + '_months_seasonal_alt_vs_seasonal_ice.png', dpi=300, transparent=True, bbx_inches='tight')
         pl.close()
 
         pl.figure()
@@ -165,5 +152,5 @@ for num in range(len(f)):
         m.scatter(location_x[2], location_y[2], marker='$3$', s=60, color='k', zorder=100)
         m.scatter(location_x[3], location_y[3], marker='$4$', s=60, color='k', zorder=100)
         pl.title('Coherence at period: ' + str(np.round(1/f[num], 2)) + ' months')
-        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coherence/coherence_' + str(np.round(1/f[num], 2)) + '_months_none_alt_vs_constant_ice.png', dpi=300, transparent=True, bbx_inches='tight')
+        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coherence/coherence_' + str(np.round(1/f[num], 2)) + '_months_seasonal_alt_vs_constant_ice.png', dpi=300, transparent=True, bbx_inches='tight')
         pl.close()

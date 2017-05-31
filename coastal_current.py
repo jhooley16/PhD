@@ -6,13 +6,13 @@ from mpl_toolkits.basemap import shiftgrid
 
 ## take a zonal average of the DOT around the continent 
 
-os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/')
+os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/Means')
 
 # Load the mean DOT calculated earlier...
 nc = Dataset('MDT_mean.nc', 'r')
 lat = nc.variables['latitude'][:]
 lon = nc.variables['longitude'][:]
-dot  = nc.variables['mean_dynamic_topography'][:]
+dot  = nc.variables['mean_dynamic_topography_seasonal_offset'][:]
 nc.close()
 
 ## Need to rearrange data so that grid cells next to the AA coast are first
@@ -39,12 +39,13 @@ distance = np.arange(0.5, 60 // 2 + 0.5,  0.5) * 60 * 1.862 # km
 
 pl.figure()
 pl.plot(distance, zonal_mean, linestyle='-', marker='o')
-pl.ylim([-1.8, -1.6])
+pl.ylim([-2.2, -2])
 pl.xlim([0, 1000])
-pl.title('Zonal DOT mean between 0$^\circ$E - 270$^\circ$E')
+pl.grid()
+#pl.title('Zonal DOT mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/mean_zonal_slope.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/mean_zonal_slope.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 ## Find the zonal average for every month
@@ -66,7 +67,7 @@ for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 
             nc = Dataset(file_ssh, 'r')
             lat_season = nc.variables['latitude'][:]
             lon_season = nc.variables['longitude'][:]
-            dot_season = nc.variables['dynamic_ocean_topography'][:]
+            dot_season = nc.variables['dynamic_ocean_topography_seasonal_offset'][:]
             nc.close()
             
             #dot_season, lon_season = shiftgrid(300.,pre_dot_season,pre_lon_season,start=False)
@@ -128,23 +129,24 @@ for T in range(12):
     pl.plot(distance, monthly_zonal_ssh_average[:, T], label=months[T])
 pl.legend(loc='lower right')
 pl.xlim([0, 1000])
-pl.ylim([-2.5, -2])
-pl.title('Zonal DOT mean between 0$^\circ$E - 270$^\circ$E')
+pl.ylim([-2.2, -2])
+#pl.title('Zonal DOT mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/full_zonal_slope.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/full_zonal_slope.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
 for T in range(12):
     pl.plot(distance, monthly_zonal_u_average[:, T], label=months[T])
-pl.legend(loc='lower right')
+pl.plot(distance, [0] * len(distance), linestyle='--', color='k')
+pl.legend(loc='best')
 pl.xlim([0, 1000])
-pl.ylim([-2.5, -2])
+pl.ylim([-0.03, 0.03])
 pl.title('Zonal u-velocity mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('u-velocity (m s$^{-1}$)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/full_zonal_u.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/full_zonal_u.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -156,7 +158,7 @@ pl.ylim([-2.5, -2])
 pl.title('Summer Zonal DOT mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/summer_zonal_slope.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/summer_zonal_slope.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -168,7 +170,7 @@ pl.ylim([-2.5, -2])
 pl.title('Summer u-velocity mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('u-velocity (m s$^{-1}$)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/summer_zonal_u.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/summer_zonal_u.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -180,7 +182,7 @@ pl.xlim([0, 1000])
 pl.title('Winter Zonal DOT mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('DOT (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/winter_zonal_slope.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/winter_zonal_slope.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -192,7 +194,7 @@ pl.xlim([0, 1000])
 pl.title('Winter u-velocity mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('u-velocity (m s$^{-1}$)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/winter_zonal_u.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/winter_zonal_u.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 # Take the gradient of the continental slope slope for each monthly average
@@ -203,10 +205,11 @@ for month in range(12):
 pl.figure()
 pl.plot(range(1, 13), grad, linestyle='-', marker='o')
 pl.xlim([0.5, 12.5])
-pl.title('Average gradient of slope along Antarctic Coastline')
+pl.grid()
+#pl.title('Average gradient of slope along Antarctic Coastline')
 pl.xlabel('Month')
 pl.ylabel('Sea Surface Gradient (mm / km )')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/monthly_zonal_slope_gradient.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/monthly_zonal_slope_gradient.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 # Take the average u-velocity
@@ -215,11 +218,11 @@ u_velocity_mean = np.nanmean(monthly_zonal_u_average, axis=1)
 pl.figure()
 pl.plot(distance, u_velocity_mean, linestyle='-', marker='o')
 pl.xlim([0, 1000])
-pl.ylim([-2.5, -2])
+pl.ylim([-0.03, 0.03])
 pl.title('Zonal u-velocity mean between 0$^\circ$E - 270$^\circ$E')
 pl.xlabel('Distance from Antarctic Coast (km)')
 pl.ylabel('u-velocity (m s$^{-1}$)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/mean_zonal_u.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/mean_zonal_u.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 # Take the gradient of the continental slope slope for each monthly average
@@ -233,5 +236,5 @@ pl.xlim([0.5, 12.5])
 pl.title('Average u-velocity of slope along Antarctic Coastline')
 pl.xlabel('Month')
 pl.ylabel('u-velocity (m s$^{-1}$)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Coastal Current/monthly_zonal_u.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/monthly_zonal_u.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()

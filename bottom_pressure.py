@@ -260,10 +260,10 @@ for line in f:
     sam_index.append(float(line))
 f.close()
 
-pl.plot(DOT_dates, timeseries, label='DOT timeseries (seasonal offset)', ls='-.')
+pl.plot(DOT_dates, timeseries, label='DOT timeseries (seasonal offset)', ls='--', color='k')
 #pl.plot(DOT_dates, np.array(timeseries_2) + 0.1, label='DOT timeseries (no offset)', ls='-.')
 #pl.plot(DOT_dates, np.array(timeseries_3) + 0.2, label='DOT timeseries (constant offset)', ls='-.')
-pl.plot(DOT_dates, ( - np.array(sam_index) / 100) + 0.1, label='- SAM index / 100', ls='-.')
+pl.plot(DOT_dates, ( - np.array(sam_index) / 100) + 0.1, label='- SAM index / 100')
 
 pl.legend(loc='best', prop={'size':6})
 pl.ylabel('Sea level anomaly (m)')

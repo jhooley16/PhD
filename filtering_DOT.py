@@ -6,9 +6,7 @@ from mpl_toolkits.basemap import Basemap
 
 for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
     os.chdir('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + year)
-    
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-
         if os.path.isfile(year + month + '_DOT.nc'):
             print(year, month)
             # Load the lat and lon data for each file
@@ -20,9 +18,9 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc.close()
 
             # Filter the DOT with a 500km gaussian filter
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_seasonal_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_filt.nc')
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_no_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_2_filt.nc')
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_constant_offset" -D4 -Fg500 -Nr -f0y -f1x -GDOT_3_filt.nc')
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_seasonal_offset" -D4 -Fg1500 -Nr -f0y -f1x -GDOT_filt.nc')
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_no_offset" -D4 -Fg1500 -Nr -f0y -f1x -GDOT_2_filt.nc')
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"dynamic_ocean_topography_constant_offset" -D4 -Fg1500 -Nr -f0y -f1x -GDOT_3_filt.nc')
             
             # Open the filtered data
             nc = Dataset('DOT_filt.nc', 'r')
@@ -37,7 +35,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             dot_3_filt = np.array(nc.variables['z'][:])
             nc.close()
 
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"sea_ice_concentration" -D4 -Fg1000 -Ni -f0y -f1x -GICE_filt.nc')
+            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"sea_ice_concentration" -D4 -Fg3000 -Ni -f0y -f1x -GICE_filt.nc')
 
             nc = Dataset('ICE_filt.nc', 'r')
             ice_filt = np.array(nc.variables['z'][:])
