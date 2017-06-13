@@ -13,7 +13,6 @@ omega = 2 * np.pi / (24 * 60 * 60) # rotation rate of earth (radians per second)
 
 # define the constants for the longitude distance equation
 a = 6378137. # radius of earth (m)
-# dx = (np.pi / 180) * a * np.cos(latitude)
 
 test_u = np.full((59, 361, 64), fill_value=np.NaN)
 test_v = np.full((59, 361, 64), fill_value=np.NaN)

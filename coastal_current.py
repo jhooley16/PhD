@@ -124,15 +124,15 @@ for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 
 
 months = ['Jan', 'Feb', 'Mar','Apr', 'May', 'Jun', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
-faster_zonal_ssh_average = np.nanmean(monthly_zonal_ssh_average[:, 2:7], axis=1)
+faster_zonal_ssh_average = np.nanmean(monthly_zonal_ssh_average[:, 4:7], axis=1)
 slower_zonal_ssh_average_1 = np.nanmean(monthly_zonal_ssh_average[:, :2], axis=1)
-slower_zonal_ssh_average_2 = np.nanmean(monthly_zonal_ssh_average[:, 7:], axis=1)
+slower_zonal_ssh_average_2 = np.nanmean(monthly_zonal_ssh_average[:, 11:], axis=1)
 slower_zonal_ssh_average = (slower_zonal_ssh_average_1 + slower_zonal_ssh_average_2) / 2
 
 pl.figure()
-pl.plot(distance, faster_zonal_ssh_average, label='MAMJJ', linestyle='-', color='k')
+pl.plot(distance, faster_zonal_ssh_average, label='AMJ', linestyle='-', color='k')
 pl.scatter(distance, faster_zonal_ssh_average, color='k')
-pl.plot(distance, slower_zonal_ssh_average, label='ASONDJF', linestyle='--', color='k')
+pl.plot(distance, slower_zonal_ssh_average, label='NDJF', linestyle='--', color='k')
 pl.scatter(distance, slower_zonal_ssh_average, color='k')
 pl.legend(loc='best')
 pl.grid()
@@ -150,9 +150,9 @@ slower_zonal_u_average_2 = np.nanmean(monthly_zonal_u_average[:, 7:], axis=1)
 slower_zonal_u_average = (slower_zonal_u_average_1 + slower_zonal_u_average_2) / 2
 
 pl.figure()
-pl.plot(distance, faster_zonal_u_average, label='MAMJJ', linestyle='-', color='k')
+pl.plot(distance, faster_zonal_u_average, label='AMJ', linestyle='-', color='k')
 pl.scatter(distance, faster_zonal_u_average, color='k')
-pl.plot(distance, slower_zonal_u_average, label='ASONDJF', linestyle='--', color='k')
+pl.plot(distance, slower_zonal_u_average, label='NDJF', linestyle='--', color='k')
 pl.scatter(distance, slower_zonal_u_average, color='k')
 pl.legend(loc='best')
 pl.grid()

@@ -5,7 +5,7 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
 # Load the total mean DOT data 
-nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/MDT_mean.nc', 'r')
+nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/Means/MDT_mean.nc', 'r')
 mean_year = nc.variables['mean_dynamic_topography_seasonal_offset'][:]
 mean_2_year = nc.variables['mean_dynamic_topography_constant_offset'][:]
 lat = nc.variables['latitude'][:]
@@ -27,7 +27,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             nc.close()
 
             # Load the mean for that month
-            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/MDT_mean_' + month + '.nc', 'r')
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/Means/MDT_mean_' + month + '.nc', 'r')
             monthly_mean = nc.variables['mean_dynamic_topography_seasonal_offset'][:]
             monthly_mean_2 = nc.variables['mean_dynamic_topography_constant_offset'][:]
             nc.close()

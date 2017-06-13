@@ -6,7 +6,8 @@ from mpl_toolkits.basemap import Basemap
 import functions as funct
 from datetime import date
 
-plotting = False
+print('Is plotting true?')
+plotting = True
 
 # Open the dynamic topography data
 dot = np.full((59, 361, 64), fill_value=np.NaN)
@@ -228,8 +229,8 @@ if plotting == True:
 ################ 'summer' and 'winter' velocities ################
 
 # Calculate the number of months in each 'summer' and 'winter' period
-summer_months = ['01', '02', '08', '09', '10', '11', '12']
-winter_months = ['03', '04', '05', '06', '07']
+summer_months = ['01', '02', '11', '12'] # '08', '09', '10', 
+winter_months = ['04', '05', '06', '07'] # '03'
 summer_count = 0
 winter_count = 0
 for month in months:

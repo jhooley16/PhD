@@ -54,7 +54,7 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             lon = nc.variables['longitude'][:]
             # Assign the monthly gridded DOT anomaly to the array
             dot_anom_ts[:, :, t]  = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:]
-            dot_2_anom_ts[:, :, t]  = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
+            #dot_2_anom_ts[:, :, t]  = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
             dot_3_anom_ts[:, :, t]  = nc.variables['dynamic_ocean_topography_anomaly_constant_offset'][:]
             nc.close()
             # Move the month index along by 1
@@ -78,7 +78,7 @@ for ilat in range(len(lat)):
             its = np.isfinite(dot_anom_ts[ilat, ilon, :])
             
             ts_1 = dot_anom_ts[ilat, ilon, its]
-            ts_2 = dot_2_anom_ts[ilat, ilon, its]
+            #ts_2 = dot_2_anom_ts[ilat, ilon, its]
             ts_3 = dot_3_anom_ts[ilat, ilon, its]
             
             sam_index_2 = sam_index[its]
@@ -86,9 +86,9 @@ for ilat in range(len(lat)):
             xcorr = stats.pearsonr(ts_1, sam_index_2)
             dot_anom_xcorr[ilat, ilon] = xcorr[0]
             dot_anom_xcorr_pvalues[ilat, ilon] = xcorr[1]
-            xcorr_2 = stats.pearsonr(ts_2, sam_index_2)
-            dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
-            dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
+            #xcorr_2 = stats.pearsonr(ts_2, sam_index_2)
+            #dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
+            #dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
             xcorr_3 = stats.pearsonr(ts_3, sam_index_2)
             dot_3_anom_xcorr[ilat, ilon] = xcorr_3[0]
             dot_3_anom_xcorr_pvalues[ilat, ilon] = xcorr_3[1]
@@ -112,25 +112,25 @@ m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_p
 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation.png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
-pl.figure()
-pl.clf()
-m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
-m.drawmapboundary()
-m.drawcoastlines(zorder=10)
-m.fillcontinents(zorder=10)
-m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-        
-grid_lats, grid_lons = np.meshgrid(lat, lon)
-stereo_x, stereo_y = m(grid_lons, grid_lats)
-        
-m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr)), cmap='RdBu_r')
-m.colorbar()
-pl.clim(1, -1)
-m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.2], color='k')
-
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_no_offset.png', transparent=True, dpi=300, bbox_inches='tight')
-pl.close()
+# pl.figure()
+# pl.clf()
+# m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+# m.drawmapboundary()
+# m.drawcoastlines(zorder=10)
+# m.fillcontinents(zorder=10)
+# m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+# m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#         
+# grid_lats, grid_lons = np.meshgrid(lat, lon)
+# stereo_x, stereo_y = m(grid_lons, grid_lats)
+#         
+# m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr)), cmap='RdBu_r')
+# m.colorbar()
+# pl.clim(1, -1)
+# m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.2], color='k')
+# 
+# pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Wind/Figures/SAM_correlation_no_offset.png', transparent=True, dpi=300, bbox_inches='tight')
+# pl.close()
 
 pl.figure()
 pl.clf()
@@ -180,7 +180,7 @@ SAMilon = np.where(SAM_section_pees >= 0.2)[1]
 SAM_section[SAMilat, SAMilon] = np.NaN
 
 dot_anom_ts[SAMilat, SAMilon, :] = np.NaN
-dot_2_anom_ts[SAMilat, SAMilon, :] = np.NaN
+#dot_2_anom_ts[SAMilat, SAMilon, :] = np.NaN
 dot_3_anom_ts[SAMilat, SAMilon, :] = np.NaN
 
 SAMilat = np.where(SAM_section > 0)[0]
@@ -189,20 +189,20 @@ SAMilon = np.where(SAM_section > 0)[1]
 SAM_section[SAMilat, SAMilon] = np.NaN
 
 dot_anom_ts[SAMilat, SAMilon, :] = np.NaN
-dot_2_anom_ts[SAMilat, SAMilon, :] = np.NaN
+#dot_2_anom_ts[SAMilat, SAMilon, :] = np.NaN
 dot_3_anom_ts[SAMilat, SAMilon, :] = np.NaN
 
 dot_anom_ts[lat > -60, :, :] = np.NaN
-dot_2_anom_ts[lat > -60, :, :] = np.NaN
+#dot_2_anom_ts[lat > -60, :, :] = np.NaN
 dot_3_anom_ts[lat > -60, :, :] = np.NaN
 
 timeseries = np.nanmean(np.nanmean(dot_anom_ts, axis=0), axis=0)
 
-timeseries_2 = np.nanmean(np.nanmean(dot_2_anom_ts, axis=0), axis=0)
+#timeseries_2 = np.nanmean(np.nanmean(dot_2_anom_ts, axis=0), axis=0)
 
 timeseries_3 = np.nanmean(np.nanmean(dot_3_anom_ts, axis=0), axis=0)
 
 f = open('/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/DOT_SAMarea_ts.csv', 'w')
 for it in range(len(timeseries)):
-    print(years[it], months[it], timeseries[it], timeseries_2[it], timeseries_3[it], file=f)
+    print(years[it], months[it], timeseries[it], timeseries_3[it], file=f)
 f.close()

@@ -85,7 +85,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
     # pressure/tide gauge record
 
     dot_anom_ts = np.zeros((59, 361, len(new_year)))
-    dot_2_anom_ts = np.zeros((59, 361, len(new_year)))
+    #dot_2_anom_ts = np.zeros((59, 361, len(new_year)))
     dot_3_anom_ts = np.zeros((59, 361, len(new_year)))
 
     for t in range(len(new_year)):
@@ -104,16 +104,16 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
                 lat = nc.variables['latitude'][:]
                 lon = nc.variables['longitude'][:]
                 dot_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_seasonal_offset'][:]
-                dot_2_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
+                #dot_2_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_no_offset'][:]
                 dot_3_anom_ts[:, :, t] = nc.variables['dynamic_ocean_topography_anomaly_constant_offset'][:]
                 nc.close()
             else:
                 dot_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
-                dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+                #dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
                 dot_3_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
         else:
             dot_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
-            dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
+            #dot_2_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
             dot_3_anom_ts[:, :, t] = np.full((59, 361), fill_value=np.NaN)
 
     ## Calculate the correlation between the time series and the altimetry data
@@ -132,7 +132,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
                 its = np.isfinite(dot_anom_ts[ilat, ilon, :])
                 
                 ts_1 = dot_anom_ts[ilat, ilon, its]
-                ts_2 = dot_2_anom_ts[ilat, ilon, its]
+                #ts_2 = dot_2_anom_ts[ilat, ilon, its]
                 ts_3 = dot_3_anom_ts[ilat, ilon, its]
                 
                 new_bpr_2 = new_bpr[its]
@@ -140,9 +140,9 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
                 xcorr = stats.pearsonr(ts_1, new_bpr_2)
                 dot_anom_xcorr[ilat, ilon] = xcorr[0]
                 dot_anom_xcorr_pvalues[ilat, ilon] = xcorr[1]
-                xcorr_2 = stats.pearsonr(ts_2, new_bpr_2)
-                dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
-                dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
+                #xcorr_2 = stats.pearsonr(ts_2, new_bpr_2)
+                #dot_2_anom_xcorr[ilat, ilon] = xcorr_2[0]
+                #dot_2_anom_xcorr_pvalues[ilat, ilon] = xcorr_2[1]
                 xcorr_3 = stats.pearsonr(ts_3, new_bpr_2)
                 dot_3_anom_xcorr[ilat, ilon] = xcorr_3[0]
                 dot_3_anom_xcorr_pvalues[ilat, ilon] = xcorr_3[1]
@@ -170,28 +170,28 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
         transparent=True, dpi=300, bbox_inches='tight')
     pl.close()
     
-    pl.figure()
-    pl.clf()
-    m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
-    m.drawmapboundary()
-    m.drawcoastlines(zorder=10)
-    m.fillcontinents(zorder=10)
-    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-        
-    grid_lats, grid_lons = np.meshgrid(lat, lon)
-    stereo_x, stereo_y = m(grid_lons, grid_lats)
-    
-    m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr)), cmap='RdBu_r')
-    m.colorbar()
-    pl.clim(1, -1)
-    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.2], color='k')
-
-    location_x, location_y = m(station_lon, station_lat)
-    m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_no_offset.png',
-        transparent=True, dpi=300, bbox_inches='tight')
-    pl.close()
+#     pl.figure()
+#     pl.clf()
+#     m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+#     m.drawmapboundary()
+#     m.drawcoastlines(zorder=10)
+#     m.fillcontinents(zorder=10)
+#     m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#     m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#         
+#     grid_lats, grid_lons = np.meshgrid(lat, lon)
+#     stereo_x, stereo_y = m(grid_lons, grid_lats)
+#     
+#     m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr)), cmap='RdBu_r')
+#     m.colorbar()
+#     pl.clim(1, -1)
+#     m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.2], color='k')
+# 
+#     location_x, location_y = m(station_lon, station_lat)
+#     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
+#     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/BPR/Figures/' + station_name + '_correlation_no_offset.png',
+#         transparent=True, dpi=300, bbox_inches='tight')
+#     pl.close()
     
     pl.figure()
     pl.clf()
@@ -241,7 +241,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
 
 DOT_dates = []
 timeseries = []
-timeseries_2 = []
+#timeseries_2 = []
 timeseries_3 = []
 f = open('/Users/jmh2g09/Documents/PhD/Data/BPR/Processed/DOT_SAMarea_ts.csv', 'r')
 for line in f:
@@ -249,8 +249,8 @@ for line in f:
     columns = line.split(' ')
     DOT_dates.append(date(int(columns[0]), int(columns[1]), 15))
     timeseries.append(float(columns[2]))
-    timeseries_2.append(float(columns[3]))
-    timeseries_3.append(float(columns[4]))
+    #timeseries_2.append(float(columns[3]))
+    timeseries_3.append(float(columns[3]))
 f.close()
 
 sam_index = []
