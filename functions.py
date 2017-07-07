@@ -6,6 +6,7 @@ import scipy.ndimage
 from netCDF4 import Dataset
 import matplotlib.pyplot as pl
 import os
+import imageio
 
 def month_data(directory, month):
     surface = []
@@ -499,3 +500,8 @@ def inpaint_nans(y):
     y[nans]= np.interp(x(nans), x(~nans), y[~nans])
     
     return y
+
+def gifmaker(giftitle, path):
+    pngfiles = path + '*.png'
+    giffile = path + giftitle + '.gif'
+    os.system('magick -dispose previous ' + pngfiles + ' ' + giffile)
