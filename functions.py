@@ -123,16 +123,9 @@ def month_data(directory, month):
                     columns = line.split()
                     ice_conc_sub_desc.append(float(columns[1]))
                 output_ice.close()
-                
-#                 pl.plot(lat_sub_desc, ssh_sub_desc, 'r', label='Filtered Data')
-#                 pl.legend(loc='best')
-#                 pl.ylabel('Sea Surface Height (m)')
-#                 pl.xlabel('Latitude')
-#                 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Processed/Figures/filtered_along_track_example.png', doi=300, transparent=True, bbox_inches='tight')
-#                 pl.close()
             
                 os.system('rm ../OUTPUT_ssh.dat ../OUTPUT_ice.dat')
-#                 pause
+
                 if len(lat_sub_desc) == len(lon_sub_desc):
                     surface += surface_sub_desc
                     time += time_sub_desc
@@ -505,3 +498,25 @@ def gifmaker(giftitle, path):
     pngfiles = path + '*.png'
     giffile = path + giftitle + '.gif'
     os.system('magick -dispose previous ' + pngfiles + ' ' + giffile)
+
+
+def wgs2top(lat):
+    """This formula (taken from http://nsidc.org/data/icesat/faq.html#alt7)
+    calculates the geodic height difference between the Topex/Poseidon and WGS84 
+    ellipsoids at specific latitudes (degrees). These values should be SUBTRACTED 
+    FROM the WGS84 ellipsoid geodic heights so that they can be compared with
+    Topex/Poseidon heights.
+    
+    The Topex/Poseidon ellipsoid is about 70 cm smaller than the WGS84. This means 
+    that geoidic heights from WGS84 are about 70 cm higher than the Topex/Poseidon
+    """
+    phi = lat * np.pi / 180
+    
+    a_wgs = 6378137.000000
+    a_top = 6378136.300000
+    b_wgs = 6356752.314245
+    b_top = 6356751.600563
+    
+    delta_h = -((a_top - a_wgs) * (np.cos(phi)**2) + (b_top - b_wgs) * (np.sin(phi)**2))
+    
+    return delta_h

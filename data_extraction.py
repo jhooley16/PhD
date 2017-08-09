@@ -6,13 +6,12 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 from datetime import date
 
-for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
+for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-        if os.path.isdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev'):
-            os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev')
-            directory = os.getcwd()
+        directory = '/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE'
+        if os.path.isdir(directory):
             print(month, year)
-
+            
             data = funct.month_data(directory, month)
             lat = data['lat']
             lon = data['lon']
@@ -90,10 +89,8 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
                 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + month + '_surfaces.png', transparent=True, dpi=300, bbox_inches='tight')
                 pl.close()
         
-            # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Processed
-            os.chdir('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year)
-            
-            nc = Dataset(year + month + '_raw.nc', 'w')
+            # Put the data in a .nc file 
+            nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + month + '_track.nc', 'w')
             nc.createDimension('station', np.size(lat))
 
             latitudes = nc.createVariable('latitude', float, ('station',))
@@ -104,31 +101,26 @@ for year in ['2010', '2011', '2012', '2013', '2014', '2015', '2016']:
             time_var = nc.createVariable('time', float, ('station',))
             mode_var = nc.createVariable('mode', 'i', ('station',))
 
-            latitudes.long_name = 'latitude'
             latitudes.standard_name = 'latitude'
             latitudes.units = 'degrees_north'
-            longitudes.long_name = 'longitude'
             longitudes.standard_name = 'longitude'
             longitudes.units = 'degrees_east'
             surface_type.standard_name = 'surface_type'
-            surface_type.long_name = 'ocean_(1)_or_lead_(2)_surface'
+            surface_type.units = 'ocean_(1)_or_lead_(2)_surface'
             sea_ice_concentration.standard_name = 'sea_ice_concentration'
-            sea_ice_concentration.long_name = 'sea_ice_concentration'
             sea_ice_concentration.units = '%'
             sea_surface_height.standard_name = 'sea_surface_height_above_WGS84'
-            sea_surface_height.long_name = 'sea_surface_height'
             sea_surface_height.units = 'm'
             time_var.standard_name = 'time'
-            time_var.long_name = 'sea_surface_height'
             time_var.units = 'days_since_1/1/1950'
             mode_var.standard_name = 'satellite_mode_type'
-            mode_var.long_name = 'LRM_(0)_or_SAR_(1)_or_SARIn_(2)'
+            mode_var.units = 'LRM_(0)_or_SAR_(1)_or_SARIn_(2)'
 
             latitudes[:] = lat
             longitudes[:] = lon
             sea_surface_height[:] = ssh
-            surface_type[:] = surface
             sea_ice_concentration[:] = ice_conc
+            surface_type[:] = surface
             time_var[:] = time
             mode_var[:] = mode
     
