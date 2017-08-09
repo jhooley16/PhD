@@ -15,9 +15,10 @@ pre_u10 = nc.variables['u10'][:] # (time, lat, lon)
 pre_v10 = nc.variables['v10'][:] # (time, lat, lon)
 
 nc.close()
-
+print(pre_lon)
 lon = np.append(pre_lon, -pre_lon[0])
-
+print(lon)
+pause
 u10 = np.dstack((pre_u10, pre_u10[:, :, 0]))
 v10 = np.dstack((pre_v10, pre_v10[:, :, 0]))
 

@@ -96,8 +96,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
         elif int(new_month[t]) >= 10:
             month_str = str(new_month[t])
 
-        altimetry_file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' \
-            + str(new_year[t]) + '/Anomalies/' + str(new_year[t]) + month_str + '_DOT_anomaly.nc'
+        altimetry_file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + str(new_year[t]) + '/Anomalies/' + str(new_year[t]) + month_str + '_DOT_anomaly.nc'
         if np.isfinite(new_bpr[t]):
             if os.path.exists(altimetry_file):
                 nc = Dataset(altimetry_file, 'r')
