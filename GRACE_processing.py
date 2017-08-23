@@ -81,7 +81,7 @@ for ilon in range(362):
         GRACE_data_pre[:, :, ilon] = GRACE_data_pre_2[:, :, 0]
 
 # Apply the GMT land mask
-nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
+nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/Masks/mask.nc', 'r')
 # Load the mask (ocean == 1)
 ocean_mask = nc.variables['z'][:]
 ocean_mask[ocean_mask != 1] = np.NaN

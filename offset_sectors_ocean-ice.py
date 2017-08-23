@@ -14,7 +14,7 @@ timeseries_ocean_ice = []
 
 dates = []
 
-for year in ['2011', '2012', '2013', '2014', '2015']:
+for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     print(year)
     
     monthly_offset_WEDD_ocean_ice = []
@@ -41,8 +41,8 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
         
         dates.append(date(int(year), int(month), 15))
 
-        if os.path.isdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev'):
-            os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev')
+        if os.path.isdir('/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE'):
+            os.chdir('/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE')
             month_number.append(int(month))
         
             for file in os.listdir():
@@ -244,7 +244,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.title(year + ' ocean - ice (SAR) histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + year + '_ocean_ice_offset_hist.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/' + year + '_ocean_ice_offset_hist.png', format='png')
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
@@ -260,12 +260,12 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + year + '_ocean_ice_offset_sectors.png', format='png')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/' + year + '_ocean_ice_offset_sectors.png', format='png')
     pl.close()
 
     average_circumpolar_offset_ocean_ice += np.array(monthly_offset_ocean_ice)
 
-f=open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ocean_ice_timeseries.txt', 'w')
+f=open('/Users/jmh2g09/Documents/PhD/Data/Offset/ocean_ice_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_ocean_ice)):
     print(WEDD_timeseries_ocean_ice[i], IND_timeseries_ocean_ice[i], ROSS_timeseries_ocean_ice[i], AMBEL_timeseries_ocean_ice[i], timeseries_ocean_ice[i], file=f)
 f.close()
@@ -279,14 +279,14 @@ pl.plot(dates, AMBEL_timeseries_ocean_ice, label='Amundsen-Bellingshausen', mark
 pl.legend(loc='lower right', prop={'size':6})
 fig.autofmt_xdate()
 pl.ylabel('SAR$_\mathrm{ocean}$ - SAR$_\mathrm{lead}$ offset (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/ocean_ice_timeseries.png', format='png')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/ocean_ice_timeseries.png', format='png')
 pl.close()
 
-average_circumpolar_offset_ocean_ice /= 5
+average_circumpolar_offset_ocean_ice /= 6
 
 print(average_circumpolar_offset_ocean_ice)
 
-f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ocean-ice_offset.dat', 'w')
+f = open('/Users/jmh2g09/Documents/PhD/Data/Offset/ocean-ice_offset.dat', 'w')
 for mnth in range(len(average_circumpolar_offset_ocean_ice)):
     print(mnth + 1, average_circumpolar_offset_ocean_ice[mnth], file=f)
 
@@ -308,19 +308,4 @@ print('October ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[9
 print('November ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[10])
 print('December ocean-ice (SAR) offset: ', average_circumpolar_offset_ocean_ice[11])
 
-#January ocean-ice (SAR) offset:  0.0519413074729
-#Febuary ocean-ice (SAR) offset:  0.0440994674621
-#March ocean-ice (SAR) offset:  0.03386778963
-#April ocean-ice (SAR) offset:  0.0432063759616
-#May ocean-ice (SAR) offset:  0.0470435583904
-#June ocean-ice (SAR) offset:  0.0645406477081
-#July ocean-ice (SAR) offset:  0.0747555318892
-#August ocean-ice (SAR) offset:  0.0745253922656
-#September ocean-ice (SAR) offset:  0.0676124492288
-#October ocean-ice (SAR) offset:  0.0723514436851
-#November ocean-ice (SAR) offset:  0.0504626853533
-#December ocean-ice (SAR) offset:  0.04950011136
-
 print('Constant ocean-ice (SAR) offset: ', constant_ocean_ice_offset)
-
-#Constant ocean-ice (SAR) offset:  0.0561588967006

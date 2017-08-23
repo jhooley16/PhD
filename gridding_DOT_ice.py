@@ -86,7 +86,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         grid_lon = grid_lon[np.argsort(grid_lon)]
         
         # Apply the land mask
-        nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
+        nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/Masks/mask.nc', 'r')
         # Load the mask (ocean == 1)
         ocean_mask = np.transpose(nc.variables['z'][:])
         nc.close()

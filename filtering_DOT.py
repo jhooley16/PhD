@@ -11,17 +11,17 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         if os.path.isfile(file):
             # Load the lat and lon data for each file
             nc = Dataset(file, 'r')
-            lat = nc.variables['latitude'][:]
-            lon = nc.variables['longitude'][:]
+            lat = nc.variables['lat'][:]
+            lon = nc.variables['lon'][:]
             nc.close()
 
             # Filter the DOT with gaussian filter
-            os.system('gmt grdfilter ' + file + '?"dynamic_ocean_topography_seasonal_offset" -D4 -Fg1000 -Nr -f0y -f1x -GDOT_filt.nc')
-            os.system('gmt grdfilter ' + file + '?"dynamic_ocean_topography_constant_offset" -D4 -Fg1000 -Nr -f0y -f1x -GDOT_2_filt.nc')
-            os.system('gmt grdfilter ' + file + '?"sea_surface_height_seasonal_offset" -D4 -Fg1000 -Nr -f0y -f1x -GSSH_filt.nc')
-            os.system('gmt grdfilter ' + file + '?"sea_surface_height_constant_offset" -D4 -Fg1000 -Nr -f0y -f1x -GSSH_2_filt.nc')
+            os.system('gmt grdfilter ' + file + '?"dynamic_ocean_topography_seasonal_offset" -D4 -Fg600 -Nr -f0x,1y -GDOT_filt.nc')
+            os.system('gmt grdfilter ' + file + '?"dynamic_ocean_topography_constant_offset" -D4 -Fg600 -Nr -f0x,1y -GDOT_2_filt.nc')
+            os.system('gmt grdfilter ' + file + '?"sea_surface_height_seasonal_offset" -D4 -Fg600 -Nr -f0x,1y -GSSH_filt.nc')
+            os.system('gmt grdfilter ' + file + '?"sea_surface_height_constant_offset" -D4 -Fg600 -Nr -f0x,1y -GSSH_2_filt.nc')
             # Filter the sea ice data
-            os.system('gmt grdfilter ' + year + month + '_DOT.nc?"sea_ice_concentration" -D4 -Fg500 -Ni -f0y -f1x -GICE_filt.nc')
+            os.system('gmt grdfilter ' + file + '?"ice_concentration" -D4 -Fg500 -Ni -f0y -f1x -GICE_filt.nc')
 
             # Open the filtered data
             nc = Dataset('DOT_filt.nc', 'r')
@@ -56,10 +56,15 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
             c = m.colorbar()
             pl.clim(0, -2.3)
             m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ice_filt)), [20,], colors='k')
-            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/' + year + '/Figures/' + year + month + '_DOT_filt.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
+            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/Figures/' + year + '/' + year + month + '_DOT_filt.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
             pl.close()
         
             # Save the gridded data
+            os.system('ncks -O -x -v filtered_dynamic_ocean_topography_seasonal_offset,\
+filtered_dynamic_ocean_topography_constant_offset,\
+filtered_sea_surface_height_seasonal_offset,\
+filtered_sea_surface_height_constant_offset,\
+filtered_sea_ice_concentration ' + file + ' ' + file)
             nc = Dataset(file, 'a')
             dot = nc.createVariable('filtered_dynamic_ocean_topography_seasonal_offset', float, ('lat','lon'))
             dot_2 = nc.createVariable('filtered_dynamic_ocean_topography_constant_offset', float, ('lat','lon'))

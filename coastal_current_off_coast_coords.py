@@ -67,6 +67,9 @@ points_y = points_y[192:] + points_y[:192]
 # pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/experiment.png', format='png', transparent=True, dpi=300)
 # pl.close()
 
+f = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates.dat', 'w')
+print('Point Bx', 'Point By', 'Point Ex', 'Point Ey', file=f, sep='\t')
+
 # Make an orthogonal line from a two-point line
 for ix in range(len(points_x)):
     # Take the points two steps ahead and two steps behind
@@ -185,18 +188,21 @@ for ix in range(len(points_x)):
     elif 99 < ix:
         STRING = str(ix)
     
-    pl.figure()
-    pl.clf()
-    m.drawcoastlines()
-    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-    m.scatter(E_x, E_y, color='r')
-    m.scatter(B_x, B_y, color='k')
-    m.scatter(np.array(points_x), np.array(points_y), color='g')
-    m.plot([A_x, C_x], [A_y, C_y], color='r')
-    m.plot([B_x, E_x], [B_y, E_y], color='k')
-    pl.title(STRING)
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/dancing_matchstick/experiment_2_'+STRING+'.png', format='png', transparent=True)
-    pl.close()
+    print(B_x, B_y, E_x, E_y, file=f, sep='\t')
+f.close()
+    
+#     pl.figure()
+#     pl.clf()
+#     m.drawcoastlines()
+#     m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#     m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#     m.scatter(E_x, E_y, color='r')
+#     m.scatter(B_x, B_y, color='k')
+#     m.scatter(np.array(points_x), np.array(points_y), color='g')
+#     m.plot([A_x, C_x], [A_y, C_y], color='r')
+#     m.plot([B_x, E_x], [B_y, E_y], color='k')
+#     pl.title(STRING)
+#     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/dancing_matchstick/experiment_2_'+STRING+'.png', format='png', transparent=True)
+#     pl.close()
 
-funct.gifmaker('dancing_matchstick', '/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/dancing_matchstick/')
+#funct.gifmaker('dancing_matchstick', '/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/dancing_matchstick/')

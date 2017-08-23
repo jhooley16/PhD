@@ -14,7 +14,7 @@ timeseries_LRM_SAR = []
 
 dates = []
 
-for year in ['2011', '2012', '2013', '2014', '2015']:
+for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     print(year)
     
     monthly_offset_WEDD_LRM_SAR = []
@@ -40,8 +40,8 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
         
         dates.append(date(int(year), int(month), 15))
         
-        if os.path.isdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev'):
-            os.chdir('/Users/jmh2g09/Documents/PhD/Data/elev_files/' + year + month + '_elev')
+        if os.path.isdir('/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE'):
+            os.chdir('/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE')
             month_number.append(int(month))
             print(month)
             for file in os.listdir():
@@ -241,7 +241,7 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.title(year + ' LRM - SAR histogram')
     pl.xlabel('Offset Bin (m)')
     pl.ylabel('Frequency')
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + year + '_LRM_SAR_offset_hist.png', format='png', doi=300, transparent=True, bbox_inches='tight')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/' + year + '_LRM_SAR_offset_hist.png', format='png', doi=300, transparent=True, bbox_inches='tight')
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
@@ -256,12 +256,12 @@ for year in ['2011', '2012', '2013', '2014', '2015']:
     pl.ylabel('Offset (m)')
     pl.xlabel('Month')
     pl.xlim([1, 12])
-    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/' + year + '_LRM_SAR_offset_sectors.png', format='png', doi=300, transparent=True, bbox_inches='tight')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/' + year + '_LRM_SAR_offset_sectors.png', format='png', doi=300, transparent=True, bbox_inches='tight')
     pl.close()
     
     average_circumpolar_offset_LRM_SAR += np.array(monthly_offset_LRM_SAR)
 
-f=open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/LRM_SAR_timeseries.txt', 'w')
+f=open('/Users/jmh2g09/Documents/PhD/Data/Offset/LRM_SAR_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_LRM_SAR)):
     print(WEDD_timeseries_LRM_SAR[i], IND_timeseries_LRM_SAR[i], ROSS_timeseries_LRM_SAR[i], AMBEL_timeseries_LRM_SAR[i], timeseries_LRM_SAR[i], file=f)
 f.close()
@@ -275,14 +275,14 @@ pl.plot(dates, AMBEL_timeseries_LRM_SAR, label='Amundsen-Bellingshausen', marker
 pl.legend(loc='lower right', prop={'size':6})
 fig.autofmt_xdate()
 pl.ylabel('LRM - SAR$_\mathrm{ocean}$ offset (m)')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/Figures/LRMSAR_timeseries.png', format='png', doi=300, transparent=True, bbox_inches='tight')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/LRMSAR_timeseries.png', format='png', doi=300, transparent=True, bbox_inches='tight')
 pl.close()
 
-average_circumpolar_offset_LRM_SAR /= 5
+average_circumpolar_offset_LRM_SAR /= 6
 
 print(average_circumpolar_offset_LRM_SAR)
 
-f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/LRM-SAR_offset.dat', 'w')
+f = open('/Users/jmh2g09/Documents/PhD/Data/Offset/LRM-SAR_offset.dat', 'w')
 for mnth in range(len(average_circumpolar_offset_LRM_SAR)):
     print(mnth + 1, average_circumpolar_offset_LRM_SAR[mnth], file=f)
 
@@ -304,19 +304,4 @@ print('October LRM-SAR offset: ', average_circumpolar_offset_LRM_SAR[9])
 print('November LRM-SAR offset: ', average_circumpolar_offset_LRM_SAR[10])
 print('December LRM-SAR offset: ', average_circumpolar_offset_LRM_SAR[11])
 
-#January LRM-SAR offset:  0.00489492491322
-#Febuary LRM-SAR offset:  0.00688199790682
-#March LRM-SAR offset:  -0.00897106525092
-#April LRM-SAR offset:  -0.0181416179892
-#May LRM-SAR offset:  -0.0101094678668
-#June LRM-SAR offset:  -0.0187603584627
-#July LRM-SAR offset:  -0.0295892239469
-#August LRM-SAR offset:  -0.0219179266994
-#September LRM-SAR offset:  -0.0162279361396
-#October LRM-SAR offset:  -0.0174250239166
-#November LRM-SAR offset:  0.00133077159719
-#December LRM-SAR offset:  0.0124794197335
-
 print('Constant LRM-SAR offset: ', constant_LRM_SAR_offset)
-
-#Constant LRM-SAR offset:  -0.00962962551012

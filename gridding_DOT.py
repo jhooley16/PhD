@@ -23,7 +23,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         dot_2 = nc.variables['dynamic_ocean_topography_constant_offset'][:]
         ssh = nc.variables['sea_surface_height_seasonal_offset'][:]
         ssh_2 = nc.variables['sea_surface_height_constant_offset'][:]
-        ice_conc = nc.variables['sea_ice_concentration'][:]
+        ice_conc = nc.variables['ice_concentration'][:]
         nc.close()
         
         input_dot = open('INPUT_dot.dat', 'w')
@@ -86,7 +86,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         grid_lon = grid_lon[np.argsort(grid_lon)]
         
         # Apply the land mask
-        nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/mask.nc', 'r')
+        nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/Masks/mask.nc', 'r')
         # Load the mask (ocean == 1)
         ocean_mask = np.transpose(nc.variables['z'][:])
         nc.close()
@@ -98,8 +98,6 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
             grid_dot_2[land[0][i]][land[1][i]] = np.NaN
             grid_ssh[land[0][i]][land[1][i]] = np.NaN
             grid_ssh_2[land[0][i]][land[1][i]] = np.NaN
-
-        month = file[4:6]
         
         pl.figure()
         pl.clf()
@@ -117,7 +115,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         pl.clim(0, -2.5)
         #pl.clim(np.mean(np.ma.masked_invalid(grid_dot)) - 3*np.std(np.ma.masked_invalid(grid_dot)), np.mean(np.ma.masked_invalid(grid_dot)) + 3*np.std(np.ma.masked_invalid(grid_dot)))
         m.contour(stereo_x, stereo_y, np.ma.masked_invalid(grid_ice), [20,])
-        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/DOT/'+ year +'/Figures/' 
+        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/Figures/' + year +'/' 
             + year + month + '_DOT.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
         pl.close()
 
@@ -127,13 +125,13 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         nc.createDimension('lat', np.size(grid_lat))
         nc.createDimension('lon', np.size(grid_lon))
 
-        latitudes = nc.createVariable('latitude', float, ('lat',))
-        longitudes = nc.createVariable('longitude', float, ('lon',))
+        latitudes = nc.createVariable('lat', float, ('lat',))
+        longitudes = nc.createVariable('lon', float, ('lon',))
         gridded_dot = nc.createVariable('dynamic_ocean_topography_seasonal_offset', float, ('lat','lon'))
         gridded_dot_2 = nc.createVariable('dynamic_ocean_topography_constant_offset', float, ('lat','lon'))
         gridded_ssh = nc.createVariable('sea_surface_height_seasonal_offset', float, ('lat','lon'))
         gridded_ssh_2 = nc.createVariable('sea_surface_height_constant_offset', float, ('lat','lon'))
-        gridded_ice = nc.createVariable('sea_ice_concentration', float, ('lat','lon'))
+        gridded_ice = nc.createVariable('ice_concentration', float, ('lat','lon'))
 
         latitudes.standard_name = 'latitude'
         latitudes.units = 'degrees_north'

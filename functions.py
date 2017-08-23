@@ -16,6 +16,7 @@ def month_data(directory, month):
     ssh = []
     ice_conc = []
     files = os.listdir(directory)
+    os.chdir(directory)
     for file in files:
         print(file)
         surface_sub = []
@@ -301,7 +302,7 @@ def apply_offset(month, boundary):
         Imnth = int(month) - 1
 
     if boundary == 'SAR_ocean':
-        f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/LRM-SAR_offset.dat', 'r')
+        f = open('/Users/jmh2g09/Documents/PhD/Data/Offset/LRM-SAR_offset.dat', 'r')
         LRM_SAR_offset = []
         for line in f:
             line.strip()
@@ -312,7 +313,7 @@ def apply_offset(month, boundary):
         return LRM_SAR_offset[Imnth]
         
     if boundary == 'ice':
-        f = open('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ocean-ice_offset.dat', 'r')
+        f = open('/Users/jmh2g09/Documents/PhD/Data/Offset/ocean-ice_offset.dat', 'r')
         ocean_ice_offset = []
         for line in f:
             line.strip()
@@ -433,11 +434,11 @@ def mode_points(lat, lon, month):
         return inside
 
     # Load the polygon data
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ModeMask/SARIn_polygon.nc', 'r')
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Offset/ModeMask/SARIn_polygon.nc', 'r')
     lat_poly_SARIn = nc.variables['Lat_SARIn'][:]
     lon_poly_SARIn = nc.variables['Lon_SARIn'][:]
     nc.close()
-    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/SeparateModes/ModeMask/SAR_polygon.nc', 'r')
+    nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Offset/ModeMask/SAR_polygon.nc', 'r')
     lat_poly_SAR = nc.variables['Lat_SAR_' + month][:]
     lon_poly_SAR = nc.variables['Lon_SAR_' + month][:]
     nc.close()
@@ -452,6 +453,7 @@ def mode_points(lat, lon, month):
     polygon_SARIn = list(zip(stereo_x_SARIn, stereo_y_SARIn))
     # For the track data
     stereo_x, stereo_y = m(lon, lat)
+    
 
     xy_pair = list(zip(stereo_x, stereo_y))
     point_type = []

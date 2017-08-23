@@ -3,12 +3,13 @@ import os
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 import numpy as np
+import functions as funct
 
 # load the monthly along track data
 
 for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-        if os.path.isfile('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/' + year + month + '_track.nc'):
+        if os.path.isfile('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + month + '_track.nc'):
             print(year, month)
 
             nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + month + '_track.nc', 'r')
@@ -79,7 +80,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
             c = m.colorbar()
             c.set_label('DOT (m)')
             pl.clim(0, -3)
-            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + '/DOT_track/Figures/' + year + month + '_DOT.png', 
+            pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Processed/Figures/' + year + '/' + year + month + '_DOT.png', 
                 format='png', transparent=True, dpi=300, bbox_inches='tight')
             pl.close()
                       
