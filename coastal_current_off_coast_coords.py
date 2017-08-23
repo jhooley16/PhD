@@ -67,8 +67,8 @@ points_y = points_y[192:] + points_y[:192]
 # pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/experiment.png', format='png', transparent=True, dpi=300)
 # pl.close()
 
-f = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates.dat', 'w')
-print('Point Bx', 'Point By', 'Point Ex', 'Point Ey', file=f, sep='\t')
+f_lon = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates_lon.dat', 'w')
+f_lat = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates_lat.dat', 'w')
 
 # Make an orthogonal line from a two-point line
 for ix in range(len(points_x)):
@@ -180,16 +180,34 @@ for ix in range(len(points_x)):
                     good_dist = True
                 A += 50
     
-    # Construct figure string number
-    if ix < 10:
-        STRING = '00' + str(ix)
-    elif 9 < ix < 100:
-        STRING = '0' + str(ix)
-    elif 99 < ix:
-        STRING = str(ix)
+    line_x = []
+    line_y = []
+    perp_line = LineString(((B_x, B_y), (E_x, E_y)))
+    for iinterp in range(0, 11, 1):
+        interp = iinterp/10
+        line = perp_line.interpolate(interp, normalized=True).xy
+        line_x.append(tuple(line)[0][0])
+        line_y.append(tuple(line)[1][0])
     
-    print(B_x, B_y, E_x, E_y, file=f, sep='\t')
-f.close()
+    line_lon, line_lat = m(line_x, line_y, inverse=True)
+    
+    line_lon = np.array(line_lon)
+    line_lat = np.array(line_lat)
+    line_lon[np.array(line_lon) < 0] += 360
+
+    print(line_lon[0], line_lon[1], line_lon[2], line_lon[3], line_lon[4], line_lon[5], line_lon[6], line_lon[7], line_lon[8], line_lon[9], line_lon[10], file=f_lon)
+    print(line_lat[0], line_lat[1], line_lat[2], line_lat[3], line_lat[4], line_lat[5], line_lat[6], line_lat[7], line_lat[8], line_lat[9], line_lat[10], file=f_lat)
+    
+f_lon.close()
+f_lat.close()
+
+#     Construct figure string number
+#     if ix < 10:
+#         STRING = '00' + str(ix)
+#     elif 9 < ix < 100:
+#         STRING = '0' + str(ix)
+#     elif 99 < ix:
+#         STRING = str(ix)
     
 #     pl.figure()
 #     pl.clf()
