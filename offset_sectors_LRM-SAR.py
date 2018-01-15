@@ -5,6 +5,7 @@ import matplotlib.pyplot as pl
 from datetime import date
 
 average_circumpolar_offset_LRM_SAR = np.zeros(12)
+average_errors = np.zeros(12)
 
 WEDD_timeseries_LRM_SAR = []
 IND_timeseries_LRM_SAR = []
@@ -22,6 +23,8 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     monthly_offset_ROSS_LRM_SAR = []
     monthly_offset_AMBEL_LRM_SAR = []
     monthly_offset_LRM_SAR = []
+    
+    errors = []
 
     hist_offset_WEDD_LRM_SAR = []
     hist_offset_IND_LRM_SAR = []
@@ -228,6 +231,8 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
             monthly_offset_ROSS_LRM_SAR.append(np.mean(offset_ROSS_LRM_SAR))  
             monthly_offset_AMBEL_LRM_SAR.append(np.mean(offset_AMBEL_LRM_SAR))
             monthly_offset_LRM_SAR.append(np.mean(circum_offset_LRM_SAR))
+            
+            errors.append(np.std(circum_offset_LRM_SAR) / np.sqrt(len(circum_offset_LRM_SAR)))
 
             WEDD_timeseries_LRM_SAR.append(np.mean(offset_WEDD_LRM_SAR))
             IND_timeseries_LRM_SAR.append(np.mean(offset_IND_LRM_SAR))
@@ -244,7 +249,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/' + year + '_LRM_SAR_offset_hist.png', format='png', doi=300, transparent=True, bbox_inches='tight')
     pl.close()
 
-    A = range(np.min(month_number), np.max(month_number) + 1)
+    A = range(np.nanmin(month_number), np.nanmax(month_number) + 1)
     pl.figure()
     pl.plot(A, monthly_offset_LRM_SAR, label='Circumpolar', marker='.')
     pl.plot(A, monthly_offset_WEDD_LRM_SAR, label='Weddell', marker='.')
@@ -260,6 +265,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     pl.close()
     
     average_circumpolar_offset_LRM_SAR += np.array(monthly_offset_LRM_SAR)
+    average_errors += np.array(errors)
 
 f=open('/Users/jmh2g09/Documents/PhD/Data/Offset/LRM_SAR_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_LRM_SAR)):
@@ -279,12 +285,16 @@ pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/LRMSAR_timeseries.p
 pl.close()
 
 average_circumpolar_offset_LRM_SAR /= 6
+average_errors /= 6
 
+print('offset')
 print(average_circumpolar_offset_LRM_SAR)
+print('errors')
+print(average_errors)
 
 f = open('/Users/jmh2g09/Documents/PhD/Data/Offset/LRM-SAR_offset.dat', 'w')
 for mnth in range(len(average_circumpolar_offset_LRM_SAR)):
-    print(mnth + 1, average_circumpolar_offset_LRM_SAR[mnth], file=f)
+    print(mnth + 1, average_circumpolar_offset_LRM_SAR[mnth], average_errors[mnth], file=f)
 
 ## Calculate the average offset for use as a constant (time) offset
 constant_LRM_SAR_offset = np.nanmean(timeseries_LRM_SAR)

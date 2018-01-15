@@ -41,8 +41,9 @@ for ipair in range(len(AA_paired) - 1):
 
 # Interpolate around Polygon with equal distance between points
 testpoint = []
-for ix in range(1, int(AA_distance), 100000):
-    testpoint.append(linepoly.interpolate(ix).xy)
+X = 200
+for ix in range(X):
+    testpoint.append(linepoly.interpolate(ix/X, normalized=True).xy)
 
 # Get the projection (x, y) coordinates of the interpolated polygon points
 points_x = []
@@ -53,26 +54,20 @@ for it in range(len(testpoint)):
 
 # 'rotate' the points so that points_x and points_y start at the tip
 # of the Antarctic Peninsula
-points_x = points_x[192:] + points_x[:192]
-points_y = points_y[192:] + points_y[:192]
+points_x = points_x[165:] + points_x[:165]
+points_y = points_y[165:] + points_y[:165]
 
-# pl.figure()
-# pl.clf()
-# m.drawcoastlines()
-# m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-# m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-# m.scatter(np.array(points_x), np.array(points_y), color='g')
-# m.scatter(points_x[0], points_y[0], color='r')
-# m.scatter(points_x[-1], points_y[-1], color='k')
-# pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/experiment.png', format='png', transparent=True, dpi=300)
-# pl.close()
+pl.figure()
+pl.clf()
+m.drawcoastlines()
+m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
 
-f_lon = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates_lon.dat', 'w')
-f_lat = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates_lat.dat', 'w')
+f = open('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/coastal_coordinates.dat', 'w')
 
 # Make an orthogonal line from a two-point line
 for ix in range(len(points_x)):
-    # Take the points two steps ahead and two steps behind
+    # Take the points three steps ahead and three steps behind
     if 2 <= ix <= len(points_x) - 3:
         min = ix - 2
         max = ix + 2
@@ -126,13 +121,13 @@ for ix in range(len(points_x)):
         E_x_test = B_x + A
         E_y_test = DB_m * E_x_test + DB_c
         E_lon_test, E_lat_test = m(E_x_test, E_y_test, inverse=True)
-        if vincenty((B_lat, B_lon), (E_lat_test, E_lon_test)).km > 50:
+        if vincenty((B_lat, B_lon), (E_lat_test, E_lon_test)).km > 60:
             test_dist = True
             if Point(E_x_test, E_y_test).within(AA_poly) == True:
                 off_coast = False
             elif Point(E_x_test, E_y_test).within(AA_poly) == False:
                 off_coast = True
-        A += 50
+        A += 10
 
     # If point E is off the coast (and therefore in the ocean) then 
     # run the loop again but increase distance to 1000 km from coast
@@ -143,9 +138,9 @@ for ix in range(len(points_x)):
             E_x = B_x + A
             E_y = DB_m * E_x + DB_c
             E_lon, E_lat = m(E_x, E_y, inverse=True)
-            if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 1000:
+            if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 500:
                 good_dist = True
-            A += 50
+            A += 10
         # Just in case: Check if the new point E is inside the coastline
         # If it is, run loop in reverse and that should fix it
         if Point(E_x, E_y).within(AA_poly) == True:
@@ -155,18 +150,18 @@ for ix in range(len(points_x)):
                 E_x = B_x + A
                 E_y = DB_m * E_x + DB_c
                 E_lon, E_lat = m(E_x, E_y, inverse=True)
-                if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 1000:
+                if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 500:
                     good_dist = True
-                A -= 50
+                A -= 10
     # If point E is on the coast, run the loop in reverse
     elif off_coast == False:
         while good_dist == False:
             E_x = B_x + A
             E_y = DB_m * E_x + DB_c
             E_lon, E_lat = m(E_x, E_y, inverse=True)
-            if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 1000:
+            if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 500:
                 good_dist = True
-            A -= 50
+            A -= 10
         # Just in case, Check if E is inside coastline, if it is, run 
         # loop again
         if Point(E_x, E_y).within(AA_poly) == True:
@@ -176,51 +171,38 @@ for ix in range(len(points_x)):
                 E_x = B_x + A
                 E_y = DB_m * E_x + DB_c
                 E_lon, E_lat = m(E_x, E_y, inverse=True)
-                if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 1000:
+                if vincenty((B_lat, B_lon), (E_lat, E_lon)).km > 500:
                     good_dist = True
-                A += 50
-    
-    line_x = []
-    line_y = []
-    perp_line = LineString(((B_x, B_y), (E_x, E_y)))
-    for iinterp in range(0, 11, 1):
-        interp = iinterp/10
-        line = perp_line.interpolate(interp, normalized=True).xy
-        line_x.append(tuple(line)[0][0])
-        line_y.append(tuple(line)[1][0])
-    
-    line_lon, line_lat = m(line_x, line_y, inverse=True)
-    
-    line_lon = np.array(line_lon)
-    line_lat = np.array(line_lat)
-    line_lon[np.array(line_lon) < 0] += 360
+                A += 10
 
-    print(line_lon[0], line_lon[1], line_lon[2], line_lon[3], line_lon[4], line_lon[5], line_lon[6], line_lon[7], line_lon[8], line_lon[9], line_lon[10], file=f_lon)
-    print(line_lat[0], line_lat[1], line_lat[2], line_lat[3], line_lat[4], line_lat[5], line_lat[6], line_lat[7], line_lat[8], line_lat[9], line_lat[10], file=f_lat)
-    
-f_lon.close()
-f_lat.close()
+    print(B_lon, B_lat, E_lon, E_lat, file=f)
+    # Construct figure string number
+    if ix < 10:
+        STRING = '00' + str(ix)
+    elif 9 < ix < 100:
+        STRING = '0' + str(ix)
+    elif 99 < ix:
+        STRING = str(ix)
 
-#     Construct figure string number
-#     if ix < 10:
-#         STRING = '00' + str(ix)
-#     elif 9 < ix < 100:
-#         STRING = '0' + str(ix)
-#     elif 99 < ix:
-#         STRING = str(ix)
+    m.scatter(E_x, E_y, color='r')
+    m.scatter(B_x, B_y, color='k')
+    m.scatter(np.array(points_x), np.array(points_y), color='g')
+    m.plot([B_x, E_x], [B_y, E_y], color='k')
     
-#     pl.figure()
-#     pl.clf()
-#     m.drawcoastlines()
-#     m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
-#     m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
-#     m.scatter(E_x, E_y, color='r')
-#     m.scatter(B_x, B_y, color='k')
-#     m.scatter(np.array(points_x), np.array(points_y), color='g')
-#     m.plot([A_x, C_x], [A_y, C_y], color='r')
-#     m.plot([B_x, E_x], [B_y, E_y], color='k')
-#     pl.title(STRING)
-#     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/dancing_matchstick/experiment_2_'+STRING+'.png', format='png', transparent=True)
-#     pl.close()
+    fig = pl.figure()
+    m.drawcoastlines()
+    m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+    m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+    m.scatter(E_x, E_y, color='r')
+    m.scatter(B_x, B_y, color='k')
+    m.scatter(np.array(points_x), np.array(points_y), color='g')
+    m.plot([B_x, E_x], [B_y, E_y], color='k')
+    pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/dancing_matchstick/experiment_2_' + STRING + '.png', transparent=True, dpi=300, bbox_inches='tight')
+    pl.close(fig)
+    
+f.close()
 
-#funct.gifmaker('dancing_matchstick', '/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/dancing_matchstick/')
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/tracks.png', transparent=True, dpi=300, bbox_inches='tight')
+pl.close()
+
+funct.gifmaker('dancing_matchstick', '/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/dancing_matchstick/')

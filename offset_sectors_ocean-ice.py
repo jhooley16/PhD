@@ -5,6 +5,7 @@ import matplotlib.pyplot as pl
 from datetime import date
 
 average_circumpolar_offset_ocean_ice = np.zeros(12)
+average_errors = np.zeros(12)
 
 WEDD_timeseries_ocean_ice = []
 IND_timeseries_ocean_ice = []
@@ -22,6 +23,8 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     monthly_offset_ROSS_ocean_ice = []
     monthly_offset_AMBEL_ocean_ice = []
     monthly_offset_ocean_ice = []
+    
+    errors = []
 
     hist_offset_WEDD_ocean_ice = []
     hist_offset_IND_ocean_ice = []
@@ -32,7 +35,6 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     month_number = []
 
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-        print(month)
         offset_WEDD_ocean_ice = []
         offset_IND_ocean_ice = []
         offset_ROSS_ocean_ice = []
@@ -44,12 +46,10 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         if os.path.isdir('/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE'):
             os.chdir('/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE')
             month_number.append(int(month))
-        
+            print(month)
             for file in os.listdir():
-                
                 # 200 points equals the decorrelation scale (50 km)
                 SC = 100
-                
                 ocean_to_ice = [1] * SC + [2] * SC
                 ice_to_ocean = [2] * SC + [1] * SC
                 
@@ -232,6 +232,8 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
             monthly_offset_AMBEL_ocean_ice.append(np.mean(offset_AMBEL_ocean_ice))
             monthly_offset_ocean_ice.append(np.mean(offset_circum_ocean_ice))
 
+            errors.append(np.std(offset_circum_ocean_ice) / np.sqrt(len(offset_circum_ocean_ice)))
+
             WEDD_timeseries_ocean_ice.append(np.mean(offset_WEDD_ocean_ice))
             IND_timeseries_ocean_ice.append(np.mean(offset_IND_ocean_ice))
             ROSS_timeseries_ocean_ice.append(np.mean(offset_ROSS_ocean_ice))  
@@ -248,7 +250,6 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     pl.close()
 
     A = range(np.min(month_number), np.max(month_number) + 1)
-    
     pl.figure()
     pl.plot(A, monthly_offset_ocean_ice, label='Circumpolar', marker='.')
     pl.plot(A, monthly_offset_WEDD_ocean_ice, label='Weddell', marker='.')
@@ -264,6 +265,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     pl.close()
 
     average_circumpolar_offset_ocean_ice += np.array(monthly_offset_ocean_ice)
+    average_errors += np.array(errors)
 
 f=open('/Users/jmh2g09/Documents/PhD/Data/Offset/ocean_ice_timeseries.txt', 'w')
 for i in range(len(WEDD_timeseries_ocean_ice)):
@@ -283,12 +285,16 @@ pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Offset/Figures/ocean_ice_timeserie
 pl.close()
 
 average_circumpolar_offset_ocean_ice /= 6
+average_errors /= 6
 
+print('offset')
 print(average_circumpolar_offset_ocean_ice)
+print('errors')
+print(average_errors)
 
 f = open('/Users/jmh2g09/Documents/PhD/Data/Offset/ocean-ice_offset.dat', 'w')
 for mnth in range(len(average_circumpolar_offset_ocean_ice)):
-    print(mnth + 1, average_circumpolar_offset_ocean_ice[mnth], file=f)
+    print(mnth + 1, average_circumpolar_offset_ocean_ice[mnth], average_errors[mnth], file=f)
 
 ## Calculate the average offset for use as a constant (time) offset
 constant_ocean_ice_offset = np.nanmean(timeseries_ocean_ice)
