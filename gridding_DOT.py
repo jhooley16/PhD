@@ -11,8 +11,11 @@ lon_resolution = '1.0'      #input ('What longitude resolution?: ')
 
 os.chdir('/Users/jmh2g09/Documents/PhD/Data/Processed/')
 
-for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
-    for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
+number = np.full((361, 59, 12, 6), fill_value=np.nan)
+
+it = 0
+for year in ['2011']:#, '2012', '2013', '2014', '2015', '2016']:
+    for month in ['01']:#, '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
         # Cycle through each raw file
         file = '/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + month + '_track.nc'
         print('Gridding: ' + file)
@@ -44,12 +47,14 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         input_ice.close()
         
         os.system('gmt xyz2grd INPUT_dot.dat -GOUTPUT_dot.nc -I' + lon_resolution + '/' + lat_resolution + ' -R-180/180/-79/-50 -fig')
+        os.system('gmt xyz2grd INPUT_dot.dat -GOUTPUT_n.nc -An -I' + lon_resolution + '/' + lat_resolution + ' -R-180/180/-79/-50 -fig')
+        
         os.system('gmt xyz2grd INPUT_dot_2.dat -GOUTPUT_dot_2.nc -I' + lon_resolution + '/' + lat_resolution + ' -R-180/180/-79/-50 -fig')
         os.system('gmt xyz2grd INPUT_ssh.dat -GOUTPUT_ssh.nc -I' + lon_resolution + '/' + lat_resolution + ' -R-180/180/-79/-50 -fig')
         os.system('gmt xyz2grd INPUT_ssh_2.dat -GOUTPUT_ssh_2.nc -I' + lon_resolution + '/' + lat_resolution + ' -R-180/180/-79/-50 -fig')
         os.system('gmt xyz2grd INPUT_ice.dat -GOUTPUT_ice.nc -I' + lon_resolution + '/' + lat_resolution + ' -R-180/180/-79/-50 -fig')
         
-        os.system('rm INPUT_dot.dat INPUT_dot_2.dat INPUT_ssh.dat INPUT_ssh_2.dat INPUT_ice.dat')
+        os.system('rm INPUT*')
         
         nc = Dataset('OUTPUT_dot.nc', 'r')
         grid_lat = nc.variables['lat'][:]
@@ -73,12 +78,19 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         grid_ice = np.array(np.transpose(nc.variables['z'][:]))
         nc.close()
         
-        os.system('rm OUTPUT_dot.nc OUTPUT_dot_2.nc OUTPUT_ssh.nc OUTPUT_ssh_2.nc OUTPUT_ice.nc')
-
+        nc = Dataset('OUTPUT_n.nc', 'r')
+        grid_lat = nc.variables['lat'][:]
+        grid_lon = nc.variables['lon'][:]
+        grid_n = np.array(np.transpose(nc.variables['z'][:]))
+        nc.close()
+        
+        os.system('rm OUTPUT*')
+        
         # Make the longitudes between 0 and 360
         grid_lon[grid_lon < 0] += 361
 
         grid_dot = grid_dot[np.argsort(grid_lon), :]
+        grid_n = grid_n[np.argsort(grid_lon), :]
         grid_dot_2 = grid_dot_2[np.argsort(grid_lon), :]
         grid_ssh = grid_ssh[np.argsort(grid_lon), :]
         grid_ssh_2 = grid_ssh_2[np.argsort(grid_lon), :]
@@ -95,6 +107,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
 
         for i in range(np.shape(land)[1]):
             grid_dot[land[0][i]][land[1][i]] = np.NaN
+            grid_n[land[0][i]][land[1][i]] = np.NaN
             grid_dot_2[land[0][i]][land[1][i]] = np.NaN
             grid_ssh[land[0][i]][land[1][i]] = np.NaN
             grid_ssh_2[land[0][i]][land[1][i]] = np.NaN
@@ -118,6 +131,26 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/Figures/' + year +'/' 
             + year + month + '_DOT.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
         pl.close()
+        
+        pl.figure()
+        pl.clf()
+        m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+        m.drawmapboundary()
+        m.drawcoastlines(zorder=10)
+        m.fillcontinents(zorder=10)
+        m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+        m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+        grid_lats, grid_lons = np.meshgrid(grid_lat, grid_lon)
+        stereo_x, stereo_y = m(grid_lons, grid_lats)
+        m.pcolor(stereo_x, stereo_y, np.ma.masked_invalid(grid_n))
+        c = m.colorbar()
+        c.set_label('Number of Data Points per Node')
+        pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/Figures/' + year +'/' 
+            + year + month + '_n.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
+        pl.close()
+        
+        number[:, :, int(month)-1, int(year)-2011] = grid_n
+        it += 1
 
         # Put the data in a .nc file in /Users/jmh2g09/Documents/PhD/Data/Gridded     
         nc = Dataset('/Users/jmh2g09/Documents/PhD/Data/Gridded/' + year + month + '_grid.nc', 'w')
@@ -128,6 +161,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         latitudes = nc.createVariable('lat', float, ('lat',))
         longitudes = nc.createVariable('lon', float, ('lon',))
         gridded_dot = nc.createVariable('dynamic_ocean_topography_seasonal_offset', float, ('lat','lon'))
+        gridded_n = nc.createVariable('number', float, ('lat','lon'))
         gridded_dot_2 = nc.createVariable('dynamic_ocean_topography_constant_offset', float, ('lat','lon'))
         gridded_ssh = nc.createVariable('sea_surface_height_seasonal_offset', float, ('lat','lon'))
         gridded_ssh_2 = nc.createVariable('sea_surface_height_constant_offset', float, ('lat','lon'))
@@ -139,6 +173,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         longitudes.units = 'degrees_east'
         gridded_dot.standard_name = 'sea_surface_height_above_EIGEN6c4_seasonal_offset'
         gridded_dot.units = 'm'
+        gridded_n.standard_name = 'number_of_data_points_per_node'
         gridded_dot_2.standard_name = 'sea_surface_height_above_EIGEN6c4_constant_offset'
         gridded_dot_2.units = 'm'
         gridded_ssh.standard_name = 'sea_surface_height_above_WGS84_seasonal_offset'
@@ -151,6 +186,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         latitudes[:] = grid_lat
         longitudes[:] = grid_lon
         gridded_dot[:] = np.transpose(grid_dot)
+        gridded_n[:] = np.transpose(grid_n)
         gridded_dot_2[:] = np.transpose(grid_dot_2)
         gridded_ssh[:] = np.transpose(grid_ssh)
         gridded_ssh_2[:] = np.transpose(grid_ssh_2)
@@ -159,3 +195,23 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         nc.close()
         
         print('Complete!')
+
+# number_mean = np.nanmean(number, 3)
+# 
+# 
+# for islice in range(12):
+#     pl.figure()
+#     pl.clf()
+#     m = Basemap(projection='spstere', boundinglat=-50, lon_0=180, resolution='l')
+#     m.drawmapboundary()
+#     m.drawcoastlines(zorder=10)
+#     m.fillcontinents(zorder=10)
+#     m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
+#     m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
+#     grid_lats, grid_lons = np.meshgrid(grid_lat, grid_lon)
+#     stereo_x, stereo_y = m(grid_lons, grid_lats)
+#     m.pcolor(stereo_x, stereo_y, np.ma.masked_invalid(number_mean[:, :, islice]))
+#     c = m.colorbar()
+#     c.set_label('Mean Number of Data Points per Node')
+#     pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Gridded/Figures/mean_n_' + str(islice + 1) + '.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
+#     pl.close()

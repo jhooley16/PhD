@@ -4,6 +4,34 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
+bathy_file = '/Users/jmh2g09/Documents/PhD/Data/Bathymetry/GEBCO_2014_2D.nc'
+nc = Dataset(bathy_file, 'r')
+bathy_lon = nc.variables['lon'][:]
+bathy_lat = nc.variables['lat'][:]
+bathy_data = nc.variables['elevation'][:]
+nc.close()
+
+nc = Dataset('INPUT_bathy.nc', 'w')
+nc.createDimension('lat', np.size(bathy_lat))
+nc.createDimension('lon', np.size(bathy_lon))
+latitude = nc.createVariable('lat', float, ('lat',))
+longitude = nc.createVariable('lon', float, ('lon',))
+wind_save = nc.createVariable('wind', float, ('lat','lon',))
+latitude[:] = bathy_lat
+longitude[:] = bathy_lon
+wind_save[:] = bathy_data
+nc.close()
+
+os.system('gmt grdsample INPUT_bathy.nc -GOUTPUT_bathy.nc -I1.0/1.0 -R-180/180/-79/-50')
+os.system('rm INPUT_bathy.nc')
+
+nc = Dataset('OUTPUT_bathy.nc', 'r')
+bathy_lat = nc.variables['y'][:]
+bathy_lon = nc.variables['x'][:]
+bathy_data = nc.variables['z'][:]
+nc.close()
+os.system('rm OUTPUT_bathy.nc')
+
 # Calculate the grid spacing in the y-direction (km)
 dy = 0.5 * 60 * 1.862
 # radius of earth (m)
@@ -89,7 +117,7 @@ c = m.colorbar()
 pl.title('$\partial$DOT/$\partial$y')
 pl.clim(1, -1)
 c.set_label('mm / km')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/mean_y_gradient_map.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/mean_y_gradient_map.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -109,7 +137,7 @@ c = m.colorbar()
 pl.title('$\partial$DOT/$\partial$x')
 pl.clim(1, -1)
 c.set_label('mm / km')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/mean_x_gradient_map.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/mean_x_gradient_map.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 # Plot the faster - slower anomaly
@@ -123,14 +151,16 @@ m.drawparallels(np.arange(-80., 81., 20.), labels=[1, 0, 0, 0])
 m.drawmeridians(np.arange(-180., 181., 20.), labels=[0, 0, 0, 1])
 grid_lats, grid_lons = np.meshgrid(lat, lon)
 stereo_x, stereo_y = m(grid_lons, grid_lats)
+grid_lats_bathy, grid_lons_bathy = np.meshgrid(bathy_lat, bathy_lon)
+stereo_x_bathy, stereo_y_bathy = m(grid_lons_bathy, grid_lats_bathy)
+m.contour(stereo_x_bathy, stereo_y_bathy, np.transpose(-bathy_data), [3500,] , colors='g')
 m.contour(stereo_x, stereo_y, np.transpose(ice_monthly[:, :, 10]), [10,], colors='k')
-m.contour(stereo_x, stereo_y, np.transpose(ice_monthly[:, :, 2]), [10,], colors='k')
 m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ddot_dy_seasonal_anomaly)), cmap='RdBu_r')
 c = m.colorbar()
-pl.title('$\partial$DOT/$\partial$y anomaly (AMJ - NDJF)')
+#pl.title('$\partial$DOT/$\partial$y anomaly (AMJ - NDJF)')
 pl.clim(0.4, -0.4)
 c.set_label('mm / km')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/gradient_y_anomaly_map.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/gradient_y_anomaly_map.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 pl.figure()
@@ -147,8 +177,8 @@ m.contour(stereo_x, stereo_y, np.transpose(ice_monthly[:, :, 10]), [10,], colors
 m.contour(stereo_x, stereo_y, np.transpose(ice_monthly[:, :, 2]), [10,], colors='k')
 m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(ddot_dx_seasonal_anomaly)), cmap='RdBu_r')
 c = m.colorbar()
-pl.title('$\partial$DOT/$\partial$x anomaly (AMJ - NDJF)')
+#pl.title('$\partial$DOT/$\partial$x anomaly (AMJ - NDJF)')
 pl.clim(0.4, -0.4)
 c.set_label('mm / km')
-pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/gradient_x_anomaly_map.png', format='png', transparent=True, dpi=300)
+pl.savefig('/Users/jmh2g09/Documents/PhD/Data/CoastalCurrent/Figures/gradient_x_anomaly_map.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()

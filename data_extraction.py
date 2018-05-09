@@ -6,8 +6,8 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 from datetime import date
 
-for year in ['2012']:#, '2012', '2013', '2014', '2015', '2016']:
-    for month in ['08', '09']:#, '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
+for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
+    for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
         directory = '/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE'
         if os.path.isdir(directory):
             print(month, year)

@@ -15,7 +15,7 @@ timeseries_LRM_SAR = []
 
 dates = []
 
-for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
+for year in ['2011']:#, '2012', '2013', '2014', '2015', '2016']:
     print(year)
     
     monthly_offset_WEDD_LRM_SAR = []
@@ -232,7 +232,7 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
             monthly_offset_AMBEL_LRM_SAR.append(np.mean(offset_AMBEL_LRM_SAR))
             monthly_offset_LRM_SAR.append(np.mean(circum_offset_LRM_SAR))
             
-            errors.append(np.std(circum_offset_LRM_SAR) / np.sqrt(len(circum_offset_LRM_SAR)))
+            errors.append(np.nanstd(circum_offset_LRM_SAR) / np.sqrt(len(circum_offset_LRM_SAR)))
 
             WEDD_timeseries_LRM_SAR.append(np.mean(offset_WEDD_LRM_SAR))
             IND_timeseries_LRM_SAR.append(np.mean(offset_IND_LRM_SAR))

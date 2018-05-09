@@ -14,9 +14,19 @@ grid_SSH_RMS_months = np.full((181, 30, 6, 12), fill_value=np.NaN)
 grid_SSH_RMS_all = np.full((181, 30, 72), fill_value=np.NaN)
 ix = 0
 dates = []
+passnumbers = []
 for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
     for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
-        dates.append(date(int(year), int(month), 15))
+        dates.append(date(int(year), int(month), 1))
+        
+        # get number of satellite passes in each month
+        passnumber = 0
+        passes_file = '/Volumes/My Passport/Data/elev_files/' + year + month + '_MERGE'
+        for file in os.listdir(passes_file):
+            if os.path.isfile(os.path.join(passes_file, file)):
+                passnumber += 1
+        passnumbers.append(passnumber)
+        
         # Cycle through each raw file
         file = '/Users/jmh2g09/Documents/PhD/Data/Processed/' + year + month + '_track.nc'
         print(year, month)
@@ -184,18 +194,20 @@ pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Errors/period_cross_overs.png', fo
 pl.close()
 
 # Average and produce regional average time series
-period_ts = np.nanmean(np.nanmean(grid_SSH_RMS_all, 1), 0)
-period_spread = np.std(np.std(grid_SSH_RMS_all, 1), 0)
+period_spread = np.nanstd(np.nanstd(grid_SSH_RMS_all, 1), 0) / np.sqrt(passnumbers)
+print(period_spread)
+period_ts = np.nanmean(np.nanmean(grid_SSH_RMS_all, 1), 0) / np.sqrt(passnumbers)
 
 fig = pl.figure()
-pl.fill_between(dates, period_ts-period_spread, period_ts+period_spread)
-pl.plot(dates, period_ts)
+pl.plot(dates, period_ts*100, 'k')
+pl.fill_between(dates, (period_ts+period_spread)*100, (period_ts-period_spread)*100, facecolor='grey')
+pl.xlim(date(2011, 1, 1), date(2016, 12, 1))
+pl.ylim(0.42, 0.54)
 fig.autofmt_xdate()
-pl.ylabel('Crossover RMS (m)')
-pl.xlabel('Date')
+pl.ylabel('Crossover RMS (cm)')
 pl.savefig('/Users/jmh2g09/Documents/PhD/Data/Errors/period_ts.png', format='png', transparent=True, dpi=300, bbox_inches='tight')
 pl.close()
 
 print('Average RMS crossover difference (2011 - 2016): ' + str(np.nanmean(period_ts)) + ' m')
 
-# Average RMS crossover difference (2011 - 2016): 0.100301367567 m
+# Average RMS crossover difference (2011 - 2016): 0.0048159134708 m

@@ -4,8 +4,8 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as pl
 from mpl_toolkits.basemap import Basemap
 
-for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
-    for month in ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
+for year in ['2011']:#, '2012', '2013', '2014', '2015', '2016']:
+    for month in ['01']:#, '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']:
         print(year, month)
         file = '/Users/jmh2g09/Documents/PhD/Data/Gridded/' + year + month + '_grid.nc'
         if os.path.isfile(file):

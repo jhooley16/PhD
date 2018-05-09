@@ -7,6 +7,7 @@ from netCDF4 import Dataset
 import matplotlib.pyplot as pl
 import os
 import imageio
+from scipy import stats
 
 def month_data(directory, month):
     surface = []
@@ -458,6 +459,7 @@ def mode_points(lat, lon, month):
     xy_pair = list(zip(stereo_x, stereo_y))
     point_type = []
     for point in xy_pair:
+    
         point_x = point[0]
         point_y = point[1]
         in_SAR = in_me(point_x, point_y, polygon_SAR)
@@ -522,3 +524,49 @@ def wgs2top(lat):
     delta_h = -((a_top - a_wgs) * (np.cos(phi)**2) + (b_top - b_wgs) * (np.sin(phi)**2))
     
     return delta_h
+
+def shift(data, shift):
+    datalist = list(data)
+    if shift == 0:
+        newlist = data
+        return newlist
+    
+    elif shift > 0:
+        a = [np.nan] * shift
+    
+        newlist = a + datalist
+        del newlist[-shift:]
+    
+        return np.array(newlist)
+    
+    elif shift < 0:
+        a = [np.nan] * -shift
+    
+        newlist = datalist + a
+        del newlist[:-shift]
+    
+        return np.array(newlist)
+
+def lagcorr(data1, data2):
+    
+    L = len(data1)
+    it = 0
+    lag = np.full((L+1), fill_value=np.nan)
+    xcorr = np.full((L+1), fill_value=np.nan)
+    for ilag in range(-L//2, (L//2)+1, 1):
+        
+        data2_lagged = shift(data2, ilag)
+        
+        I = np.isfinite(data2_lagged)
+        data2_slice = data2_lagged[I]
+        data1_slice = data1[I]
+        
+        lag[it] = ilag
+        xcorr[it] = stats.pearsonr(data1_slice, data2_slice)[0]
+        it += 1
+    
+    return {'lag': lag, 'xcorr': xcorr}
+
+
+
+

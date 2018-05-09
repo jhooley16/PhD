@@ -8,7 +8,7 @@ import functions as funct
 ## For each month, calculate the zonal geostrophic velocity
 # Define the constants for the geostrophic equation
 dy = 0.5 * 60 * 1862 # distance between two latitude points (0.5 grid spacing) (m)
-g = 9.81 # gravitational acceleration (meters per square second)
+rho = 1025 # density of seawater
 omega = 2 * np.pi / (24 * 60 * 60) # rotation rate of earth (radians per second)
 
 # define the constants for the longitude distance equation
@@ -43,11 +43,11 @@ for year in ['2011', '2012', '2013', '2014', '2015', '2016']:
         dssh_dx = np.gradient(dot, axis=1) / dx_2d
 
         # Calculate the geostrophic currents
-        u =  - (g / f_2d) * dssh_dy
-        v = (g / f_2d) * dssh_dx
+        u =  - (1 / (f_2d * rho)) * dssh_dy
+        v = (1 / (f_2d * rho)) * dssh_dx
         
-        test_u[:, :, it] = - (g / f_2d) * dssh_dy
-        test_v[:, :, it] = (g / f_2d) * dssh_dx
+        test_u[:, :, it] = - (1 / (f_2d * rho)) * dssh_dy
+        test_v[:, :, it] = (1 / (f_2d * rho)) * dssh_dx
         test_dot[:, :, it] = dot
         it += 1
         # Save the data to a file
