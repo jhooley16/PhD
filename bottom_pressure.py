@@ -10,6 +10,34 @@ from mpl_toolkits.basemap import Basemap
 
 ## Create a bottom pressure/tide gauge - CS2 correlation map
 
+bathy_file = '/Users/jmh2g09/Documents/PhD/Data/Bathymetry/GEBCO_2014_2D.nc'
+nc = Dataset(bathy_file, 'r')
+bathy_lon = nc.variables['lon'][:]
+bathy_lat = nc.variables['lat'][:]
+bathy_data = nc.variables['elevation'][:]
+nc.close()
+
+nc = Dataset('INPUT_bathy.nc', 'w')
+nc.createDimension('lat', np.size(bathy_lat))
+nc.createDimension('lon', np.size(bathy_lon))
+latitude = nc.createVariable('lat', float, ('lat',))
+longitude = nc.createVariable('lon', float, ('lon',))
+wind_save = nc.createVariable('wind', float, ('lat','lon',))
+latitude[:] = bathy_lat
+longitude[:] = bathy_lon
+wind_save[:] = bathy_data
+nc.close()
+
+os.system('gmt grdsample INPUT_bathy.nc -GOUTPUT_bathy.nc -I1.0/1.0 -R-180/180/-79/-60')
+os.system('rm INPUT_bathy.nc')
+
+nc = Dataset('OUTPUT_bathy.nc', 'r')
+bathy_lat = nc.variables['y'][:]
+bathy_lon = nc.variables['x'][:]
+bathy_data = nc.variables['z'][:]
+nc.close()
+os.system('rm OUTPUT_bathy.nc')
+
 # Load the bottom pressure data
 M = 1
 fig = pl.figure()
@@ -148,10 +176,15 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
     grid_lats, grid_lons = np.meshgrid(lat, lon)
     stereo_x, stereo_y = m(grid_lons, grid_lats)
     
+    grid_lats_bathy, grid_lons_bathy = np.meshgrid(bathy_lat, bathy_lon)
+    stereo_x_bathy, stereo_y_bathy = m(grid_lons_bathy, grid_lats_bathy)
+    
     m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr)), cmap='RdBu_r')
     m.colorbar()
     pl.clim(1, -1)
-    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_pvalues)), [0.05], color='k')
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_anom_xcorr_pvalues)), [0.05], colors='k')
+    
+    m.contour(stereo_x_bathy, stereo_y_bathy, np.transpose(np.ma.masked_invalid(-bathy_data)), [3500], colors='g')
 
     location_x, location_y = m(station_lon, station_lat)
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
@@ -174,7 +207,7 @@ for station_name  in  ['DrakePassageSouth_bpr','DrakePassageSouthDeep_bpr','Drak
     m.pcolor(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr)), cmap='RdBu_r')
     m.colorbar()
     pl.clim(1, -1)
-    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.05], color='k')
+    m.contour(stereo_x, stereo_y, np.transpose(np.ma.masked_invalid(dot_2_anom_xcorr_pvalues)), [0.05], colors='k')
 
     location_x, location_y = m(station_lon, station_lat)
     m.scatter(location_x, location_y, marker='*', s=50, color='k', zorder=100)
